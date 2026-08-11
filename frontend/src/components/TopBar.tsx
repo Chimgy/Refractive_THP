@@ -1,11 +1,22 @@
+import ProfileMenu from './ProfileMenu';
+
 type Props = {
   projectName: string;
   subtitle: string;
   onProjects: () => void;
   onNewProject: () => void;
+  onHowItWorks?: () => void;
+  onSignOut?: () => void;
 };
 
-export default function TopBar({ projectName, subtitle, onProjects, onNewProject }: Props) {
+export default function TopBar({
+  projectName,
+  subtitle,
+  onProjects,
+  onNewProject,
+  onHowItWorks,
+  onSignOut,
+}: Props) {
   return (
     <div className="topbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
@@ -28,7 +39,7 @@ export default function TopBar({ projectName, subtitle, onProjects, onNewProject
         <button type="button" className="btn btn-primary" style={{ height: 30 }}>
           Refresh
         </button>
-        <div className="avatar">SO</div>
+        <ProfileMenu onHowItWorks={onHowItWorks} onSignOut={onSignOut} />
       </div>
     </div>
   );

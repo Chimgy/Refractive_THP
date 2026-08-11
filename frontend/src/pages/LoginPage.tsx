@@ -1,19 +1,21 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { authErrorMessage, useAuth } from '../auth/AuthContext';
+import SsoButton, { SsoDivider } from '../components/SsoButtons';
 
-type Props = { onSignIn: () => void };
+type Props = { onSignIn: () => void; onRegister?: () => void; onHowItWorks?: () => void };
 
 const domains = [
   {
     n: '01',
     title: 'In development',
-    body: 'DORA-style metrics polled from the linked GitHub repo.',
+    body: 'DORA-style metrics polled from linked GitHub repos.',
     source: 'GITHUB',
   },
   {
     n: '02',
     title: 'Post development',
-    body: 'Latency, error rate and utilisation from live infrastructure.',
-    source: 'CLOUDWATCH · CF',
+    body: 'Latency, error rate, bottlenecks and utilisation from live infrastructure.',
+    source: 'AWS CLOUDWATCH · CLOUDFLARE',
   },
   {
     n: '03',
@@ -23,9 +25,26 @@ const domains = [
   },
 ];
 
-export default function LoginPage({ onSignIn }: Props) {
+export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await login(email, password);
+      onSignIn();
+    } catch (err) {
+      setError(authErrorMessage(err, 'Sign in failed'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
@@ -43,7 +62,7 @@ export default function LoginPage({ onSignIn }: Props) {
           <span style={{ font: "600 13px var(--sans)", letterSpacing: '-0.01em' }}>THP Portal</span>
         </div>
         <nav style={{ display: 'flex', gap: 26, font: '400 12.5px var(--sans)', color: 'rgba(237,237,240,.5)' }}>
-          <a href="#how">How it works</a>
+          <button type="button" className="link-btn" onClick={onHowItWorks}>How it works</button>
           <a href="#metrics">Metrics</a>
           <a href="#docs">Docs</a>
         </nav>
@@ -55,7 +74,7 @@ export default function LoginPage({ onSignIn }: Props) {
             className="mono"
             style={{ fontSize: 10.5, letterSpacing: '0.16em', color: '#9b82ea', textTransform: 'uppercase' }}
           >
-            Software delivery intelligence
+            Refractive Labs Take-Home Project
           </div>
           <h1
             style={{
@@ -66,7 +85,7 @@ export default function LoginPage({ onSignIn }: Props) {
               textWrap: 'pretty',
             }}
           >
-            Every project, from first commit to live traffic.
+            Live Analytics Platform.
           </h1>
           <p
             style={{
@@ -77,8 +96,8 @@ export default function LoginPage({ onSignIn }: Props) {
               textWrap: 'pretty',
             }}
           >
-            One portal, one auth layer, one dashboard — three data domains feeding into it per
-            project. Track repos while you build, infra once you ship, and real usage after launch.
+            Track DORA metrics while you build, DevOps and infrastructure metrics once you ship, and real-world usage telemetry after launch.
+            Bring development, DevOps, infrastructure, and usage analytics together in one place.
           </p>
 
           <div style={{ marginTop: 44, borderTop: '1px solid var(--border)' }}>
@@ -114,20 +133,24 @@ export default function LoginPage({ onSignIn }: Props) {
             background: 'var(--panel-2)',
           }}
         >
-          <form
-            className="panel"
-            style={{ padding: '30px 28px' }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSignIn();
-            }}
-          >
+          <form className="panel" style={{ padding: '30px 28px' }} onSubmit={handleSubmit}>
             <div style={{ font: '500 17px var(--sans)', letterSpacing: '-0.01em' }}>Sign in</div>
             <div style={{ marginTop: 7, font: '400 12.5px/1.5 var(--sans)', color: 'rgba(237,237,240,.45)' }}>
-              Internal accounts only.
+              No account yet?{' '}
+              <button type="button" className="link-btn" onClick={onRegister}>Create one</button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 26 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 24 }}>
+              <SsoButton provider="github" emphasis />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+                <SsoButton provider="google" compact />
+                <SsoButton provider="microsoft" compact />
+              </div>
+            </div>
+
+            <SsoDivider />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 <span className="label">Email</span>
                 <input
@@ -138,7 +161,10 @@ export default function LoginPage({ onSignIn }: Props) {
                 />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                <span className="label">Password</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span className="label">Password</span>
+                  <a href="#reset" style={{ font: '400 11.5px var(--sans)', color: 'rgba(237,237,240,.4)' }}>Forgot?</a>
+                </div>
                 <input
                   type="password"
                   placeholder="••••••••••"
@@ -146,7 +172,12 @@ export default function LoginPage({ onSignIn }: Props) {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </label>
-              <button type="submit" className="btn btn-primary btn-block">Continue</button>
+              {error && (
+                <div className="mono" style={{ fontSize: 11.5, color: 'var(--bad)' }}>{error}</div>
+              )}
+              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+                {submitting ? 'Signing in…' : 'Continue'}
+              </button>
               <div
                 style={{
                   display: 'flex',
@@ -156,7 +187,7 @@ export default function LoginPage({ onSignIn }: Props) {
                   color: 'rgba(237,237,240,.42)',
                 }}
               >
-                <a href="#reset">Forgot password</a>
+                <span className="mono" style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}>SSO via OAuth 2.0 + PKCE</span>
                 <span className="mono" style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}>JWT · 24H</span>
               </div>
             </div>

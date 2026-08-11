@@ -26,7 +26,12 @@ import {
 } from '../data/mock';
 
 type Tab = 'dev' | 'post' | 'telemetry' | 'connections';
-type Props = { onProjects: () => void; onNewProject: () => void };
+type Props = {
+  onProjects: () => void;
+  onNewProject: () => void;
+  onHowItWorks?: () => void;
+  onSignOut?: () => void;
+};
 
 const tabs: { id: Tab; label: string }[] = [
   { id: 'dev', label: 'In development' },
@@ -409,7 +414,7 @@ function ConnectionsTab() {
   );
 }
 
-export default function DashboardPage({ onProjects, onNewProject }: Props) {
+export default function DashboardPage({ onProjects, onNewProject, onHowItWorks, onSignOut }: Props) {
   const [tab, setTab] = useState<Tab>('dev');
 
   return (
@@ -417,6 +422,8 @@ export default function DashboardPage({ onProjects, onNewProject }: Props) {
       <TopBar
         projectName="portal-api"
         subtitle="thp/portal-api · eu-west-2 · thp.dev"
+        onHowItWorks={onHowItWorks}
+        onSignOut={onSignOut}
         onProjects={onProjects}
         onNewProject={onNewProject}
       />
