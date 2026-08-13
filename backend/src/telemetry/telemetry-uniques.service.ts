@@ -52,4 +52,15 @@ export class TelemetryUniquesService {
       UNIQUES_TTL_SECONDS,
     );
   }
+
+  countRecent(projectId: string, days: number): Promise<number> {
+    const keys: string[] = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      keys.push(uniqueVisitorsCounterKey(projectId, date));
+    }
+    return this.redis.pfcount(...keys);
+  }
 }

@@ -26,5 +26,6 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TelemetryUniquesService,
     TelemetryErrorsService,
   ],
+  exports: [TelemetryUniquesService],
 })
 export class TelemetryModule {}

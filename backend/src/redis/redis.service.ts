@@ -53,4 +53,11 @@ export class RedisService {
       .expire(key, ttlSeconds)
       .exec();
   }
+
+  // PFCOUNT accepts multiple keys and returns the cardinality of their
+  // union directly — no PFMERGE needed just to read a "last N days" figure
+  // out of N daily HLL keys.
+  pfcount(...keys: string[]): Promise<number> {
+    return this.client.pfcount(...keys);
+  }
 }

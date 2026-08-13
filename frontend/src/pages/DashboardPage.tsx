@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useNavigate, useParams } from 'react-router-dom';
+import * as telemetryApi from '../api/telemetry';
 import { useAuth } from '../auth/AuthContext';
 import TopBar from '../components/TopBar';
 import {
@@ -615,8 +616,30 @@ function PostDevTab() {
   );
 }
 
-// FIRST
-function TelemetryTab() {
+function TelemetryTab({ projectId }: { projectId: string }) {
+  // The only real (non-mock) stat on this tab so far — a live PFCOUNT over
+  // the last 7 daily Redis HyperLogLog keys. Everything else here is still
+  // `mock.ts` (see external_data.md §5 roadmap step 8).
+  const [uniques, setUniques] = useState<number | null>(null);
+  const [uniquesFailed, setUniquesFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setUniques(null);
+    setUniquesFailed(false);
+    telemetryApi
+      .uniqueVisitors(projectId, 7)
+      .then((res) => {
+        if (!cancelled) setUniques(res.uniqueVisitors);
+      })
+      .catch(() => {
+        if (!cancelled) setUniquesFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="stat-strip">
@@ -628,11 +651,10 @@ function TelemetryTab() {
           deltaTone="good"
         />
         <Stat
-          label="Sessions 7d"
-          value="12.0"
-          unit="k"
-          delta="▲ 9% vs prev 7d"
-          deltaTone="good"
+          label="Unique visitors 7d"
+          value={uniques === null ? '—' : uniques.toLocaleString()}
+          delta={uniquesFailed ? 'failed to load' : 'live · Redis HLL'}
+          deltaTone={uniquesFailed ? 'bad' : 'muted'}
         />
         <Stat
           label="Avg session"
@@ -930,11 +952,12 @@ export default function DashboardPage() {
     tab: string;
   }>();
   const tab = tabs.some((t) => t.id === tabParam) ? (tabParam as Tab) : 'dev';
+  const activeProjectId = projectId ?? 'portal-api';
 
   return (
     <div>
       <TopBar
-        projectName={projectId ?? 'portal-api'}
+        projectName={activeProjectId}
         subtitle="thp/portal-api · eu-west-2 · thp.dev"
         onHowItWorks={() => navigate('/how-it-works')}
         onSignOut={() => {
@@ -969,7 +992,7 @@ export default function DashboardPage() {
         <main style={{ padding: '22px 26px 30px' }}>
           {tab === 'dev' && <DevTab />}
           {tab === 'post' && <PostDevTab />}
-          {tab === 'telemetry' && <TelemetryTab />}
+          {tab === 'telemetry' && <TelemetryTab projectId={activeProjectId} />}
           {tab === 'connections' && <ConnectionsTab />}
         </main>
 
