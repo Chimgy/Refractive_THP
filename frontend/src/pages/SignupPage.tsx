@@ -1,12 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authErrorMessage, useAuth } from '../auth/AuthContext';
 import SsoButton, { SsoDivider } from '../components/SsoButtons';
-
-type Props = {
-  onSignUp: () => void;
-  onSignIn: () => void;
-  onHowItWorks?: () => void;
-};
 
 const steps = [
   ['01', 'Authorise the provider — no password to store.'],
@@ -24,11 +19,8 @@ function strength(pw: string) {
   return Math.min(s, 4);
 }
 
-export default function SignupPage({
-  onSignUp,
-  onSignIn,
-  onHowItWorks,
-}: Props) {
+export default function SignupPage() {
+  const navigate = useNavigate();
   const { register } = useAuth();
   const [companyName, setCompanyName] = useState('');
   const [name, setName] = useState('');
@@ -44,7 +36,7 @@ export default function SignupPage({
     setSubmitting(true);
     try {
       await register({ companyName, displayName: name, email, password });
-      onSignUp();
+      navigate('/projects/new');
     } catch (err) {
       setError(authErrorMessage(err, 'Sign up failed'));
     } finally {
@@ -89,7 +81,11 @@ export default function SignupPage({
             color: 'rgba(237,237,240,.5)',
           }}
         >
-          <button type="button" className="link-btn" onClick={onHowItWorks}>
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => navigate('/how-it-works')}
+          >
             How it works
           </button>
           <a href="#docs">Docs</a>
@@ -97,7 +93,7 @@ export default function SignupPage({
             type="button"
             className="btn"
             style={{ height: 30 }}
-            onClick={onSignIn}
+            onClick={() => navigate('/login')}
           >
             Sign in
           </button>
@@ -222,7 +218,11 @@ export default function SignupPage({
               }}
             >
               Already have an account?{' '}
-              <button type="button" className="link-btn" onClick={onSignIn}>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => navigate('/login')}
+              >
                 Sign in
               </button>
             </div>

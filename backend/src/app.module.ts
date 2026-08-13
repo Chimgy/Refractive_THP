@@ -9,6 +9,7 @@ import { CompaniesModule } from './companies/companies.module';
 import { InternalModule } from './internal/internal.module';
 import { RedisModule } from './redis/redis.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
 import { TenantModule } from './tenant/tenant.module';
 import { UsersModule } from './users/users.module';
 
@@ -31,10 +32,17 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     TenantModule,
     InternalModule,
+    TelemetryModule,
     // Auth silo needs no prefix (AuthController is already `/api/auth/*`).
     // Tenant/Internal silos get their prefix applied here, at the module
     // boundary, so the silo IS the module boundary — the seam needed to
     // later extract one into its own deployable.
+    //
+    // TelemetryModule is a fourth silo, deliberately left out of
+    // RouterModule.register below and out of the global `api` prefix
+    // entirely (see main.ts) — its routes (GET /THP_analytics.js,
+    // POST /telemetry) are embedded in third-party HTML and can't be
+    // versioned or moved the way tenant/internal routes can.
     //
     // RouterModule only tags the exact module class(es) listed — it does NOT
     // walk a module's own `imports` — so every module that actually declares

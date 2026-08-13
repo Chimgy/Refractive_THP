@@ -1,6 +1,6 @@
 import { useState } from 'react';
-
-type Props = { onSignIn?: () => void; onBack?: () => void };
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
 const SECTIONS = [
   '01 · Design principles',
@@ -226,8 +226,13 @@ const LEAD: React.CSSProperties = {
   textWrap: 'pretty',
 };
 
-export default function HowItWorksPage({ onSignIn, onBack }: Props) {
+export default function HowItWorksPage() {
+  const navigate = useNavigate();
+  const { status } = useAuth();
   const [active, setActive] = useState(0);
+  const onSignIn = () => navigate('/login');
+  const onBack = () =>
+    navigate(status === 'authenticated' ? '/projects' : '/login');
 
   return (
     <div style={{ minHeight: '100svh' }}>

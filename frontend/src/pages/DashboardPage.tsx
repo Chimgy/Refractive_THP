@@ -10,6 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import TopBar from '../components/TopBar';
 import {
   connections,
@@ -26,12 +28,6 @@ import {
 } from '../data/mock';
 
 type Tab = 'dev' | 'post' | 'telemetry' | 'connections';
-type Props = {
-  onProjects: () => void;
-  onNewProject: () => void;
-  onHowItWorks?: () => void;
-  onSignOut?: () => void;
-};
 
 const tabs: { id: Tab; label: string }[] = [
   { id: 'dev', label: 'In development' },
@@ -926,23 +922,26 @@ function ConnectionsTab() {
   );
 }
 
-export default function DashboardPage({
-  onProjects,
-  onNewProject,
-  onHowItWorks,
-  onSignOut,
-}: Props) {
-  const [tab, setTab] = useState<Tab>('dev');
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { projectId, tab: tabParam } = useParams<{
+    projectId: string;
+    tab: string;
+  }>();
+  const tab = tabs.some((t) => t.id === tabParam) ? (tabParam as Tab) : 'dev';
 
   return (
     <div>
       <TopBar
-        projectName="portal-api"
+        projectName={projectId ?? 'portal-api'}
         subtitle="thp/portal-api · eu-west-2 · thp.dev"
-        onHowItWorks={onHowItWorks}
-        onSignOut={onSignOut}
-        onProjects={onProjects}
-        onNewProject={onNewProject}
+        onHowItWorks={() => navigate('/how-it-works')}
+        onSignOut={() => {
+          void logout().then(() => navigate('/login'));
+        }}
+        onProjects={() => navigate('/projects')}
+        onNewProject={() => navigate('/projects/new')}
       />
 
       <div className="tabs">
@@ -951,7 +950,7 @@ export default function DashboardPage({
             key={t.id}
             type="button"
             className={`tab ${tab === t.id ? 'tab-active' : ''}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => navigate(`/projects/${projectId}/${t.id}`)}
           >
             {t.label}
           </button>

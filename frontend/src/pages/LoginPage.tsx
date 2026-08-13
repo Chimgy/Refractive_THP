@@ -1,12 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authErrorMessage, useAuth } from '../auth/AuthContext';
 import SsoButton, { SsoDivider } from '../components/SsoButtons';
-
-type Props = {
-  onSignIn: () => void;
-  onRegister?: () => void;
-  onHowItWorks?: () => void;
-};
 
 const domains = [
   {
@@ -29,11 +24,8 @@ const domains = [
   },
 ];
 
-export default function LoginPage({
-  onSignIn,
-  onRegister,
-  onHowItWorks,
-}: Props) {
+export default function LoginPage() {
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,7 +38,7 @@ export default function LoginPage({
     setSubmitting(true);
     try {
       await login(email, password);
-      onSignIn();
+      navigate('/projects');
     } catch (err) {
       setError(authErrorMessage(err, 'Sign in failed'));
     } finally {
@@ -90,7 +82,11 @@ export default function LoginPage({
             color: 'rgba(237,237,240,.5)',
           }}
         >
-          <button type="button" className="link-btn" onClick={onHowItWorks}>
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => navigate('/how-it-works')}
+          >
             How it works
           </button>
           <a href="#metrics">Metrics</a>
@@ -212,7 +208,11 @@ export default function LoginPage({
               }}
             >
               No account yet?{' '}
-              <button type="button" className="link-btn" onClick={onRegister}>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => navigate('/signup')}
+              >
                 Create one
               </button>
             </div>

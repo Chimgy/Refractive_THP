@@ -1,9 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sparkline from '../components/Sparkline';
 import { projects } from '../data/mock';
 import type { Project } from '../data/mock';
-
-type Props = { onOpenProject: () => void; onNewProject: () => void };
 
 const filters = ['All', 'In development', 'Live', 'Needs connection'];
 const cols = '1.5fr 130px 118px 118px 150px 90px';
@@ -20,7 +19,8 @@ function stagePill(stage: Project['stage']) {
   return <span className="pill pill-partial">PARTIAL</span>;
 }
 
-export default function ProjectsPage({ onOpenProject, onNewProject }: Props) {
+export default function ProjectsPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
   const [query, setQuery] = useState('');
 
@@ -74,7 +74,7 @@ export default function ProjectsPage({ onOpenProject, onNewProject }: Props) {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={onNewProject}
+            onClick={() => navigate('/projects/new')}
           >
             + New project
           </button>
@@ -129,7 +129,7 @@ export default function ProjectsPage({ onOpenProject, onNewProject }: Props) {
           key={p.id}
           className="tr row-hover"
           style={{ gridTemplateColumns: cols, padding: '15px 30px' }}
-          onClick={onOpenProject}
+          onClick={() => navigate(`/projects/${p.id}/dev`)}
         >
           <div>
             <div style={{ font: '500 13.5px var(--sans)' }}>{p.name}</div>

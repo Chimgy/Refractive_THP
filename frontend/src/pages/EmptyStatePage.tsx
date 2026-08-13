@@ -1,4 +1,4 @@
-type Props = { onDone: () => void };
+import { useNavigate } from 'react-router-dom';
 
 const paths = [
   {
@@ -15,7 +15,10 @@ const paths = [
   },
 ];
 
-export default function EmptyStatePage({ onDone }: Props) {
+export default function EmptyStatePage() {
+  const navigate = useNavigate();
+  const onDone = () => navigate('/projects/portal-api/dev');
+
   return (
     <div
       style={{
