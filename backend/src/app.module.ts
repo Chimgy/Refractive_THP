@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
 import { InternalModule } from './internal/internal.module';
+import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
@@ -48,11 +49,15 @@ import { UsersModule } from './users/users.module';
     // walk a module's own `imports` — so every module that actually declares
     // controllers must be listed explicitly, either as the `module` or in
     // `children` (children inherit the parent path). TenantModule itself
-    // declares no controllers; CompaniesModule does, so it's listed here too.
-    // Any future tenant-facing module (e.g. a ProjectsModule) needs adding to
-    // BOTH TenantModule's `imports` and this `children` array.
+    // declares no controllers; CompaniesModule/ProjectsModule do, so they're
+    // listed here too. Any future tenant-facing module needs adding to BOTH
+    // TenantModule's `imports` and this `children` array.
     RouterModule.register([
-      { path: 'tenant', module: TenantModule, children: [CompaniesModule] },
+      {
+        path: 'tenant',
+        module: TenantModule,
+        children: [CompaniesModule, ProjectsModule],
+      },
       { path: 'internal', module: InternalModule },
     ]),
   ],

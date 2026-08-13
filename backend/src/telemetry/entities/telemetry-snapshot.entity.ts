@@ -20,9 +20,8 @@ export class TelemetrySnapshot {
   @Column({ type: 'jsonb' })
   payload: Record<string, unknown>;
 
-  @Column({ type: 'varchar', nullable: true })
-  ip: string | null;
-
+  // No IP column: geo/uniques need it hashed-before-persisted (salted
+  // daily rotation, not built yet) or not stored raw at all.
   @Column({ type: 'varchar', nullable: true })
   userAgent: string | null;
 

@@ -22,4 +22,35 @@ export class RedisService {
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
+
+  // Pipelined so the increment and its expiry land in one round trip —
+  // callers doing this per hash field in a loop (telemetry counters) don't
+  // pay two network hops each.
+  async hincrbyWithExpire(
+    key: string,
+    field: string,
+    amount: number,
+    ttlSeconds: number,
+  ): Promise<void> {
+    await this.client
+      .pipeline()
+      .hincrby(key, field, amount)
+      .expire(key, ttlSeconds)
+      .exec();
+  }
+
+  // Same pipelined shape as hincrbyWithExpire, for HyperLogLog keys — PFADD
+  // + EXPIRE in one round trip so unique-visitor keys self-expire without a
+  // separate rollup job.
+  async pfaddWithExpire(
+    key: string,
+    member: string,
+    ttlSeconds: number,
+  ): Promise<void> {
+    await this.client
+      .pipeline()
+      .pfadd(key, member)
+      .expire(key, ttlSeconds)
+      .exec();
+  }
 }

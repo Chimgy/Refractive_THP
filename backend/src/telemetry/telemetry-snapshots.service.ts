@@ -12,15 +12,11 @@ export class TelemetrySnapshotsService {
 
   async capture(
     payload: Record<string, unknown>,
-    meta: { ip: string | null; userAgent: string | null },
+    meta: { projectId: string | null; userAgent: string | null },
   ) {
-    const projectId =
-      typeof payload.projectId === 'string' ? payload.projectId || null : null;
-
     const snapshot = this.snapshots.create({
-      projectId,
+      projectId: meta.projectId,
       payload,
-      ip: meta.ip,
       userAgent: meta.userAgent,
     });
     await this.snapshots.save(snapshot);

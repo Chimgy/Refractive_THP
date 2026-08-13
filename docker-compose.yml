@@ -74,6 +74,24 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
+  # Public tunnel to `backend` for THP_analytics.js — an embed script on a
+  # third-party site can't reach `localhost`, so this exposes the local dev
+  # backend at a stable public URL. Named Cloudflare Tunnel, not ngrok — the
+  # ngrok free tier serves its own browser-warning interstitial in place of
+  # the real response on every request, and a bare `<script src>` tag can't
+  # attach the header that bypasses it, so it can never work for this case.
+  # Needs CLOUDFLARE_TUNNEL_TOKEN in a root .env (see .env.example) — same
+  # value works on any machine, so `docker compose up cloudflared` gets you
+  # the same embed URL on a new laptop. Hostname routing (which public
+  # hostname points at this tunnel) is configured in the Cloudflare Zero
+  # Trust dashboard, not here.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   redis_data:
