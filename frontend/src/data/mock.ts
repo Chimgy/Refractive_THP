@@ -73,6 +73,8 @@ export const projects: Project[] = [
   },
 ];
 
+// In Development
+
 export const deploymentSeries = [
   { week: 'W1', deploys: 2 },
   { week: 'W2', deploys: 3 },
@@ -101,6 +103,7 @@ export const leadTimeBuckets = [
   { bucket: '> 3d', count: 8, pct: 15, tone: 'var(--warn)' },
 ];
 
+// Post Development
 export const latencySeries = [
   { t: '00:00', p50: 84, p99: 240 },
   { t: '04:00', p50: 78, p99: 214 },
@@ -124,6 +127,7 @@ export const errorBudget = [
   { code: '5xx', share: 0.3, tone: 'var(--bad)' },
 ];
 
+// Telemetry
 export const trafficSeries = [
   { day: 'Mon', views: 4200, sessions: 1650 },
   { day: 'Tue', views: 4810, sessions: 1820 },
@@ -149,11 +153,28 @@ export const taggedClicks = [
   { tag: 'footer_github', count: 156 },
 ];
 
+// General
 export const pollActivity = [
-  { tone: 'var(--good)', title: 'GitHub poll complete', meta: '14:00 · 6 releases, 41 PRs' },
-  { tone: 'var(--good)', title: 'Cloudflare zone poll', meta: '14:00 · 184k req, 91% cache hit' },
-  { tone: 'var(--warn)', title: 'CloudWatch not connected', meta: 'Add a read-only IAM role to enable' },
-  { tone: 'var(--accent)', title: 'Telemetry ingest', meta: '2,904 events last 24h' },
+  {
+    tone: 'var(--good)',
+    title: 'GitHub poll complete',
+    meta: '14:00 · 6 releases, 41 PRs',
+  },
+  {
+    tone: 'var(--good)',
+    title: 'Cloudflare zone poll',
+    meta: '14:00 · 184k req, 91% cache hit',
+  },
+  {
+    tone: 'var(--warn)',
+    title: 'CloudWatch not connected',
+    meta: 'Add a read-only IAM role to enable',
+  },
+  {
+    tone: 'var(--accent)',
+    title: 'Telemetry ingest',
+    meta: '2,904 events last 24h',
+  },
 ];
 
 export const connections = [

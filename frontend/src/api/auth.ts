@@ -21,10 +21,17 @@ export type AuthenticatedUser = {
   displayName: string | null;
 };
 
-export type AuthResult = { accessToken: string; refreshToken: string; user: SafeUser };
+export type AuthResult = {
+  accessToken: string;
+  refreshToken: string;
+  user: SafeUser;
+};
 
 export function login(email: string, password: string): Promise<AuthResult> {
-  return request<AuthResult>('/auth/login', { method: 'POST', body: { email, password } });
+  return request<AuthResult>('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  });
 }
 
 export function register(payload: {
@@ -33,11 +40,14 @@ export function register(payload: {
   email: string;
   password: string;
 }): Promise<AuthResult> {
-  return request<AuthResult>('/auth/register', { method: 'POST', body: payload });
+  return request<AuthResult>('/auth/register', {
+    method: 'POST',
+    body: payload,
+  });
 }
 
-export function logout(refreshToken: string): Promise<void> {
-  return request<void>('/auth/logout', { method: 'POST', body: { refreshToken } });
+export function logout(): Promise<void> {
+  return request<void>('/auth/logout', { method: 'POST' });
 }
 
 export function me(): Promise<AuthenticatedUser> {

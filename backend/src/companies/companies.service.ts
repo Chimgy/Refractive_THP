@@ -31,6 +31,9 @@ export class CompaniesService {
   }
 
   async deactivate(id: string): Promise<void> {
-    await this.companiesRepository.update({ id }, { isActive: false, deletedAt: new Date() });
+    await this.companiesRepository.update(
+      { id },
+      { isActive: false, deletedAt: new Date() },
+    );
   }
 }

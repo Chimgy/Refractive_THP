@@ -2,7 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { authErrorMessage, useAuth } from '../auth/AuthContext';
 import SsoButton, { SsoDivider } from '../components/SsoButtons';
 
-type Props = { onSignUp: () => void; onSignIn: () => void; onHowItWorks?: () => void };
+type Props = {
+  onSignUp: () => void;
+  onSignIn: () => void;
+  onHowItWorks?: () => void;
+};
 
 const steps = [
   ['01', 'Authorise the provider — no password to store.'],
@@ -20,7 +24,11 @@ function strength(pw: string) {
   return Math.min(s, 4);
 }
 
-export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) {
+export default function SignupPage({
+  onSignUp,
+  onSignIn,
+  onHowItWorks,
+}: Props) {
   const { register } = useAuth();
   const [companyName, setCompanyName] = useState('');
   const [name, setName] = useState('');
@@ -45,7 +53,9 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
   }
 
   return (
-    <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
+    >
       <header
         style={{
           display: 'flex',
@@ -56,8 +66,19 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 18, height: 18, borderRadius: 4, background: 'var(--accent)' }} />
-          <span style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}>THP Portal</span>
+          <div
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              background: 'var(--accent)',
+            }}
+          />
+          <span
+            style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}
+          >
+            THP Portal
+          </span>
         </div>
         <nav
           style={{
@@ -68,17 +89,37 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
             color: 'rgba(237,237,240,.5)',
           }}
         >
-          <button type="button" className="link-btn" onClick={onHowItWorks}>How it works</button>
+          <button type="button" className="link-btn" onClick={onHowItWorks}>
+            How it works
+          </button>
           <a href="#docs">Docs</a>
-          <button type="button" className="btn" style={{ height: 30 }} onClick={onSignIn}>Sign in</button>
+          <button
+            type="button"
+            className="btn"
+            style={{ height: 30 }}
+            onClick={onSignIn}
+          >
+            Sign in
+          </button>
         </nav>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,.9fr) minmax(420px,1.1fr)', flex: 1 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,.9fr) minmax(420px,1.1fr)',
+          flex: 1,
+        }}
+      >
         <section style={{ padding: '56px 46px 52px' }}>
           <div
             className="mono"
-            style={{ fontSize: 10.5, letterSpacing: '0.16em', color: '#9b82ea', textTransform: 'uppercase' }}
+            style={{
+              fontSize: 10.5,
+              letterSpacing: '0.16em',
+              color: '#9b82ea',
+              textTransform: 'uppercase',
+            }}
           >
             Create account
           </div>
@@ -101,15 +142,37 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
               textWrap: 'pretty',
             }}
           >
-            Signing up with GitHub is the fast path — it grants the read scope the delivery metrics
-            need in the same step.
+            Signing up with GitHub is the fast path — it grants the read scope
+            the delivery metrics need in the same step.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 38 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              marginTop: 38,
+            }}
+          >
             {steps.map(([n, body]) => (
-              <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
-                <span className="mono" style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}>{n}</span>
-                <span style={{ font: '400 13px/1.5 var(--sans)', color: 'rgba(237,237,240,.6)' }}>{body}</span>
+              <div
+                key={n}
+                style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}
+              >
+                <span
+                  className="mono"
+                  style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}
+                >
+                  {n}
+                </span>
+                <span
+                  style={{
+                    font: '400 13px/1.5 var(--sans)',
+                    color: 'rgba(237,237,240,.6)',
+                  }}
+                >
+                  {body}
+                </span>
               </div>
             ))}
           </div>
@@ -127,7 +190,8 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
             }}
           >
             Workspace domains are allow-listed. sam@thp.dev joins{' '}
-            <span style={{ color: 'var(--accent-text)' }}>THP</span> automatically as a viewer.
+            <span style={{ color: 'var(--accent-text)' }}>THP</span>{' '}
+            automatically as a viewer.
           </div>
         </section>
 
@@ -145,13 +209,32 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
             style={{ width: '100%', maxWidth: 400, padding: '30px 28px' }}
             onSubmit={handleSubmit}
           >
-            <div style={{ font: '500 17px var(--sans)', letterSpacing: '-0.01em' }}>Sign up</div>
-            <div style={{ marginTop: 7, font: '400 12.5px/1.5 var(--sans)', color: 'rgba(237,237,240,.45)' }}>
+            <div
+              style={{ font: '500 17px var(--sans)', letterSpacing: '-0.01em' }}
+            >
+              Sign up
+            </div>
+            <div
+              style={{
+                marginTop: 7,
+                font: '400 12.5px/1.5 var(--sans)',
+                color: 'rgba(237,237,240,.45)',
+              }}
+            >
               Already have an account?{' '}
-              <button type="button" className="link-btn" onClick={onSignIn}>Sign in</button>
+              <button type="button" className="link-btn" onClick={onSignIn}>
+                Sign in
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 24 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 9,
+                marginTop: 24,
+              }}
+            >
               <SsoButton provider="github" emphasis badge="RECOMMENDED" />
               <SsoButton provider="google" />
               <SsoButton provider="microsoft" />
@@ -160,7 +243,9 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
             <SsoDivider label="OR EMAIL" />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
                 <span className="label">Workspace name</span>
                 <input
                   type="text"
@@ -170,7 +255,9 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
                   onChange={(e) => setCompanyName(e.target.value)}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
                 <span className="label">Full name</span>
                 <input
                   type="text"
@@ -180,7 +267,9 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
                   onChange={(e) => setName(e.target.value)}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
                 <span className="label">Work email</span>
                 <input
                   type="email"
@@ -190,7 +279,9 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
                 <span className="label">Password</span>
                 <input
                   type="password"
@@ -207,20 +298,34 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
                         flex: 1,
                         height: 3,
                         borderRadius: 2,
-                        background: i < score ? 'var(--good)' : 'rgba(255,255,255,.09)',
+                        background:
+                          i < score ? 'var(--good)' : 'rgba(255,255,255,.09)',
                       }}
                     />
                   ))}
                 </div>
-                <span className="mono" style={{ fontSize: 10.5, color: 'var(--faint)' }}>
-                  12+ chars · {['too short', 'weak', 'fair', 'good', 'strong'][score]}
+                <span
+                  className="mono"
+                  style={{ fontSize: 10.5, color: 'var(--faint)' }}
+                >
+                  12+ chars ·{' '}
+                  {['too short', 'weak', 'fair', 'good', 'strong'][score]}
                 </span>
               </label>
 
               {error && (
-                <div className="mono" style={{ fontSize: 11.5, color: 'var(--bad)' }}>{error}</div>
+                <div
+                  className="mono"
+                  style={{ fontSize: 11.5, color: 'var(--bad)' }}
+                >
+                  {error}
+                </div>
               )}
-              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={submitting}
+              >
                 {submitting ? 'Creating account…' : 'Create account'}
               </button>
               <p
@@ -231,8 +336,8 @@ export default function SignupPage({ onSignUp, onSignIn, onHowItWorks }: Props) 
                   textWrap: 'pretty',
                 }}
               >
-                By creating an account you agree to the acceptable-use policy. Credentials are hashed
-                with argon2id; sessions are 24h JWTs.
+                By creating an account you agree to the acceptable-use policy.
+                Credentials are hashed with argon2id; sessions are 24h JWTs.
               </p>
             </div>
           </form>

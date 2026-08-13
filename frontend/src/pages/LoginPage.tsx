@@ -2,7 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { authErrorMessage, useAuth } from '../auth/AuthContext';
 import SsoButton, { SsoDivider } from '../components/SsoButtons';
 
-type Props = { onSignIn: () => void; onRegister?: () => void; onHowItWorks?: () => void };
+type Props = {
+  onSignIn: () => void;
+  onRegister?: () => void;
+  onHowItWorks?: () => void;
+};
 
 const domains = [
   {
@@ -25,7 +29,11 @@ const domains = [
   },
 ];
 
-export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props) {
+export default function LoginPage({
+  onSignIn,
+  onRegister,
+  onHowItWorks,
+}: Props) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,7 +55,9 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
   }
 
   return (
-    <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
+    >
       <header
         style={{
           display: 'flex',
@@ -58,21 +68,52 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 18, height: 18, borderRadius: 4, background: 'var(--accent)' }} />
-          <span style={{ font: "600 13px var(--sans)", letterSpacing: '-0.01em' }}>THP Portal</span>
+          <div
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              background: 'var(--accent)',
+            }}
+          />
+          <span
+            style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}
+          >
+            THP Portal
+          </span>
         </div>
-        <nav style={{ display: 'flex', gap: 26, font: '400 12.5px var(--sans)', color: 'rgba(237,237,240,.5)' }}>
-          <button type="button" className="link-btn" onClick={onHowItWorks}>How it works</button>
+        <nav
+          style={{
+            display: 'flex',
+            gap: 26,
+            font: '400 12.5px var(--sans)',
+            color: 'rgba(237,237,240,.5)',
+          }}
+        >
+          <button type="button" className="link-btn" onClick={onHowItWorks}>
+            How it works
+          </button>
           <a href="#metrics">Metrics</a>
           <a href="#docs">Docs</a>
         </nav>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.15fr) minmax(360px,.85fr)', flex: 1 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1.15fr) minmax(360px,.85fr)',
+          flex: 1,
+        }}
+      >
         <section style={{ padding: '64px 54px 60px' }}>
           <div
             className="mono"
-            style={{ fontSize: 10.5, letterSpacing: '0.16em', color: '#9b82ea', textTransform: 'uppercase' }}
+            style={{
+              fontSize: 10.5,
+              letterSpacing: '0.16em',
+              color: '#9b82ea',
+              textTransform: 'uppercase',
+            }}
           >
             Refractive Labs Take-Home Project
           </div>
@@ -96,8 +137,10 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
               textWrap: 'pretty',
             }}
           >
-            Track DORA metrics while you build, DevOps and infrastructure metrics once you ship, and real-world usage telemetry after launch.
-            Bring development, DevOps, infrastructure, and usage analytics together in one place.
+            Track DORA metrics while you build, DevOps and infrastructure
+            metrics once you ship, and real-world usage telemetry after launch.
+            Bring development, DevOps, infrastructure, and usage analytics
+            together in one place.
           </p>
 
           <div style={{ marginTop: 44, borderTop: '1px solid var(--border)' }}>
@@ -113,14 +156,32 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
                   borderBottom: '1px solid rgba(255,255,255,.07)',
                 }}
               >
-                <span className="mono" style={{ fontSize: 11, color: 'rgba(237,237,240,.32)' }}>{d.n}</span>
+                <span
+                  className="mono"
+                  style={{ fontSize: 11, color: 'rgba(237,237,240,.32)' }}
+                >
+                  {d.n}
+                </span>
                 <div>
-                  <div style={{ font: '500 14.5px var(--sans)' }}>{d.title}</div>
-                  <div style={{ marginTop: 5, font: '400 13px/1.5 var(--sans)', color: 'var(--muted)' }}>
+                  <div style={{ font: '500 14.5px var(--sans)' }}>
+                    {d.title}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 5,
+                      font: '400 13px/1.5 var(--sans)',
+                      color: 'var(--muted)',
+                    }}
+                  >
                     {d.body}
                   </div>
                 </div>
-                <span className="mono" style={{ fontSize: 10.5, color: 'var(--faint)' }}>{d.source}</span>
+                <span
+                  className="mono"
+                  style={{ fontSize: 10.5, color: 'var(--faint)' }}
+                >
+                  {d.source}
+                </span>
               </div>
             ))}
           </div>
@@ -133,16 +194,45 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
             background: 'var(--panel-2)',
           }}
         >
-          <form className="panel" style={{ padding: '30px 28px' }} onSubmit={handleSubmit}>
-            <div style={{ font: '500 17px var(--sans)', letterSpacing: '-0.01em' }}>Sign in</div>
-            <div style={{ marginTop: 7, font: '400 12.5px/1.5 var(--sans)', color: 'rgba(237,237,240,.45)' }}>
+          <form
+            className="panel"
+            style={{ padding: '30px 28px' }}
+            onSubmit={handleSubmit}
+          >
+            <div
+              style={{ font: '500 17px var(--sans)', letterSpacing: '-0.01em' }}
+            >
+              Sign in
+            </div>
+            <div
+              style={{
+                marginTop: 7,
+                font: '400 12.5px/1.5 var(--sans)',
+                color: 'rgba(237,237,240,.45)',
+              }}
+            >
               No account yet?{' '}
-              <button type="button" className="link-btn" onClick={onRegister}>Create one</button>
+              <button type="button" className="link-btn" onClick={onRegister}>
+                Create one
+              </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 24 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 9,
+                marginTop: 24,
+              }}
+            >
               <SsoButton provider="github" emphasis />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 9,
+                }}
+              >
                 <SsoButton provider="google" compact />
                 <SsoButton provider="microsoft" compact />
               </div>
@@ -151,7 +241,9 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
             <SsoDivider />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
                 <span className="label">Email</span>
                 <input
                   type="email"
@@ -160,10 +252,26 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <label
+                style={{ display: 'flex', flexDirection: 'column', gap: 7 }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                  }}
+                >
                   <span className="label">Password</span>
-                  <a href="#reset" style={{ font: '400 11.5px var(--sans)', color: 'rgba(237,237,240,.4)' }}>Forgot?</a>
+                  <a
+                    href="#reset"
+                    style={{
+                      font: '400 11.5px var(--sans)',
+                      color: 'rgba(237,237,240,.4)',
+                    }}
+                  >
+                    Forgot?
+                  </a>
                 </div>
                 <input
                   type="password"
@@ -173,9 +281,18 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
                 />
               </label>
               {error && (
-                <div className="mono" style={{ fontSize: 11.5, color: 'var(--bad)' }}>{error}</div>
+                <div
+                  className="mono"
+                  style={{ fontSize: 11.5, color: 'var(--bad)' }}
+                >
+                  {error}
+                </div>
               )}
-              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={submitting}
+              >
                 {submitting ? 'Signing in…' : 'Continue'}
               </button>
               <div
@@ -187,22 +304,59 @@ export default function LoginPage({ onSignIn, onRegister, onHowItWorks }: Props)
                   color: 'rgba(237,237,240,.42)',
                 }}
               >
-                <span className="mono" style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}>SSO via OAuth 2.0 + PKCE</span>
-                <span className="mono" style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}>JWT · 24H</span>
+                <span
+                  className="mono"
+                  style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}
+                >
+                  SSO via OAuth 2.0 + PKCE
+                </span>
+                <span
+                  className="mono"
+                  style={{ fontSize: 10.5, color: 'rgba(237,237,240,.3)' }}
+                >
+                  JWT · 24H
+                </span>
               </div>
             </div>
           </form>
 
-          <div style={{ marginTop: 26, padding: '18px 20px', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10 }}>
+          <div
+            style={{
+              marginTop: 26,
+              padding: '18px 20px',
+              border: '1px solid rgba(255,255,255,.07)',
+              borderRadius: 10,
+            }}
+          >
             <div className="label">Currently tracking</div>
             <div style={{ display: 'flex', gap: 34, marginTop: 16 }}>
               <div>
-                <div className="mono" style={{ fontSize: 26 }}>12</div>
-                <div style={{ marginTop: 3, font: '400 11.5px var(--sans)', color: 'rgba(237,237,240,.45)' }}>projects</div>
+                <div className="mono" style={{ fontSize: 26 }}>
+                  12
+                </div>
+                <div
+                  style={{
+                    marginTop: 3,
+                    font: '400 11.5px var(--sans)',
+                    color: 'rgba(237,237,240,.45)',
+                  }}
+                >
+                  projects
+                </div>
               </div>
               <div>
-                <div className="mono" style={{ fontSize: 26 }}>7</div>
-                <div style={{ marginTop: 3, font: '400 11.5px var(--sans)', color: 'rgba(237,237,240,.45)' }}>live</div>
+                <div className="mono" style={{ fontSize: 26 }}>
+                  7
+                </div>
+                <div
+                  style={{
+                    marginTop: 3,
+                    font: '400 11.5px var(--sans)',
+                    color: 'rgba(237,237,240,.45)',
+                  }}
+                >
+                  live
+                </div>
               </div>
             </div>
           </div>

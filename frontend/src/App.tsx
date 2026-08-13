@@ -27,8 +27,12 @@ function Routes() {
 
   if (status === 'loading') {
     return (
-      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center' }}>
-        <span className="mono faint" style={{ fontSize: 12 }}>Loading…</span>
+      <div
+        style={{ minHeight: '100svh', display: 'grid', placeItems: 'center' }}
+      >
+        <span className="mono faint" style={{ fontSize: 12 }}>
+          Loading…
+        </span>
       </div>
     );
   }
@@ -44,7 +48,12 @@ function Routes() {
       );
     }
     if (route === 'how') {
-      return <HowItWorksPage onSignIn={() => setRoute('login')} onBack={() => setRoute('login')} />;
+      return (
+        <HowItWorksPage
+          onSignIn={() => setRoute('login')}
+          onBack={() => setRoute('login')}
+        />
+      );
     }
     return (
       <LoginPage
@@ -56,9 +65,15 @@ function Routes() {
   }
 
   if (route === 'how') {
-    return <HowItWorksPage onSignIn={() => setRoute('login')} onBack={() => setRoute('projects')} />;
+    return (
+      <HowItWorksPage
+        onSignIn={() => setRoute('login')}
+        onBack={() => setRoute('projects')}
+      />
+    );
   }
-  if (route === 'empty') return <EmptyStatePage onDone={() => setRoute('dashboard')} />;
+  if (route === 'empty')
+    return <EmptyStatePage onDone={() => setRoute('dashboard')} />;
   if (route === 'dashboard') {
     return (
       <DashboardPage

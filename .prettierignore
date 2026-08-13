@@ -1,0 +1,5 @@
+backend/dist
+backend/coverage
+frontend/dist
+package-lock.json
+.claude/

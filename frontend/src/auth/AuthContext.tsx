@@ -1,7 +1,14 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import * as authApi from '../api/auth';
 import { ApiError, refreshSession } from '../api/client';
-import { clearTokens, getTokens, setTokens } from './tokenStore';
+import { clearTokens, setTokens } from './tokenStore';
 
 export type SessionUser = {
   id: string;
@@ -17,18 +24,35 @@ type AuthContextValue = {
   status: Status;
   user: SessionUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: { companyName: string; displayName: string; email: string; password: string }) => Promise<void>;
+  register: (payload: {
+    companyName: string;
+    displayName: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function fromSafeUser(user: authApi.SafeUser): SessionUser {
-  return { id: user.id, email: user.email, role: user.role, companyId: user.companyId, displayName: user.displayName };
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    companyId: user.companyId,
+    displayName: user.displayName,
+  };
 }
 
 function fromAuthenticatedUser(user: authApi.AuthenticatedUser): SessionUser {
-  return { id: user.userId, email: user.email, role: user.role, companyId: user.companyId, displayName: user.displayName };
+  return {
+    id: user.userId,
+    email: user.email,
+    role: user.role,
+    companyId: user.companyId,
+    displayName: user.displayName,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,15 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    // A stored refresh token from a previous session — silently re-auth
-    // before rendering anything that assumes we know who's signed in. The
-    // access token never survives a reload (memory-only), so go straight to
-    // refreshSession() instead of calling /auth/me first and watching it 401.
-    const { refreshToken } = getTokens();
-    if (!refreshToken) {
-      setStatus('unauthenticated');
-      return;
-    }
+    // The refresh token lives in an httpOnly cookie now — invisible to JS,
+    // so there's no client-side way to check "is there a session" before
+    // trying. Always attempt a silent refresh on mount and treat failure
+    // (no cookie, or an expired/revoked one) as unauthenticated.
     refreshSession()
       .then((accessToken) => {
         if (!accessToken) throw new Error('refresh failed');
@@ -67,21 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       async login(email, password) {
         const result = await authApi.login(email, password);
-        setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+        setTokens({ accessToken: result.accessToken });
         setUser(fromSafeUser(result.user));
         setStatus('authenticated');
       },
       async register(payload) {
         const result = await authApi.register(payload);
-        setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+        setTokens({ accessToken: result.accessToken });
         setUser(fromSafeUser(result.user));
         setStatus('authenticated');
       },
       async logout() {
-        const { refreshToken } = getTokens();
-        if (refreshToken) {
-          await authApi.logout(refreshToken).catch(() => undefined);
-        }
+        await authApi.logout().catch(() => undefined);
         clearTokens();
         setUser(null);
         setStatus('unauthenticated');

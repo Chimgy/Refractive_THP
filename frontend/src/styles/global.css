@@ -14,7 +14,7 @@
   --warn: #e0a33b;
   --bad: #e2564d;
 
-  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --mono: ui-monospace, Menlo, Consolas, monospace;
 
   color-scheme: dark;
@@ -25,16 +25,34 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-body { margin: 0; background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+}
 
-#root { min-height: 100svh; }
+#root {
+  min-height: 100svh;
+}
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: #9b82ea; }
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: #9b82ea;
+}
 
-h1, h2, h3 { margin: 0; font-weight: 400; color: var(--text); }
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 400;
+  color: var(--text);
+}
 
 button {
   font: inherit;
@@ -54,5 +72,10 @@ input {
   padding: 0 13px;
   width: 100%;
 }
-input::placeholder { color: rgba(237, 237, 240, 0.35); }
-input:focus { outline: none; border-color: var(--accent); }
+input::placeholder {
+  color: rgba(237, 237, 240, 0.35);
+}
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

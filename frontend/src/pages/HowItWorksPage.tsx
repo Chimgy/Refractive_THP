@@ -64,10 +64,22 @@ const ARCH = [
 const TABLES = [
   ['users', 'identity, role, workspace membership', 'argon2id hash'],
   ['projects', 'the unit everything hangs off', 'slug unique per workspace'],
-  ['connections', 'one row per source per project', 'secret_arn, not the secret'],
-  ['metric_snapshots', 'hourly rollups, one row per poll', 'JSONB payload + BRIN on ts'],
+  [
+    'connections',
+    'one row per source per project',
+    'secret_arn, not the secret',
+  ],
+  [
+    'metric_snapshots',
+    'hourly rollups, one row per poll',
+    'JSONB payload + BRIN on ts',
+  ],
   ['deployments', 'releases + ECS events, deduped', 'source of deploy freq'],
-  ['telemetry_events', 'raw page views, sessions, tagged clicks', 'partitioned monthly, 90d TTL'],
+  [
+    'telemetry_events',
+    'raw page views, sessions, tagged clicks',
+    'partitioned monthly, 90d TTL',
+  ],
   ['audit_log', 'credential writes and role changes', 'append-only'],
 ];
 
@@ -105,13 +117,49 @@ const INTEGRATIONS = [
 
 const ENDPOINTS: [string, string, string, string, string][] = [
   ['GET', '/projects', 'list + health summary', 'viewer', 'get'],
-  ['GET', '/projects/:id/dora?range=90d', 'deploy freq, lead time, series', 'viewer', 'get'],
-  ['GET', '/projects/:id/infra?range=7d', 'latency, errors, utilisation', 'viewer', 'get'],
-  ['GET', '/projects/:id/telemetry', 'views, sessions, top pages', 'viewer', 'get'],
-  ['POST', '/projects/:id/connections', 'writes secret, returns arn ref', 'admin', 'admin'],
-  ['POST', '/projects/:id/refresh', 'forces an out-of-band poll', 'admin', 'admin'],
+  [
+    'GET',
+    '/projects/:id/dora?range=90d',
+    'deploy freq, lead time, series',
+    'viewer',
+    'get',
+  ],
+  [
+    'GET',
+    '/projects/:id/infra?range=7d',
+    'latency, errors, utilisation',
+    'viewer',
+    'get',
+  ],
+  [
+    'GET',
+    '/projects/:id/telemetry',
+    'views, sessions, top pages',
+    'viewer',
+    'get',
+  ],
+  [
+    'POST',
+    '/projects/:id/connections',
+    'writes secret, returns arn ref',
+    'admin',
+    'admin',
+  ],
+  [
+    'POST',
+    '/projects/:id/refresh',
+    'forces an out-of-band poll',
+    'admin',
+    'admin',
+  ],
   ['POST', '/telemetry', 'event batch ingest', 'project key', 'key'],
-  ['POST', '/auth/login · /auth/register', 'issues 24h JWT + refresh', 'public', 'post'],
+  [
+    'POST',
+    '/auth/login · /auth/register',
+    'issues 24h JWT + refresh',
+    'public',
+    'post',
+  ],
 ];
 
 const SECURITY = [
@@ -151,8 +199,21 @@ const TRADEOFFS = [
 function SectionHead({ n, title }: { n: string; title: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-      <span className="mono" style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}>{n}</span>
-      <h2 style={{ margin: 0, font: '400 26px var(--sans)', letterSpacing: '-0.02em' }}>{title}</h2>
+      <span
+        className="mono"
+        style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}
+      >
+        {n}
+      </span>
+      <h2
+        style={{
+          margin: 0,
+          font: '400 26px var(--sans)',
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {title}
+      </h2>
     </div>
   );
 }
@@ -182,11 +243,27 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
         <button
           type="button"
           className="link-btn"
-          style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text)' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: 'var(--text)',
+          }}
           onClick={onBack}
         >
-          <div style={{ width: 18, height: 18, borderRadius: 4, background: 'var(--accent)' }} />
-          <span style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}>THP Portal</span>
+          <div
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: 4,
+              background: 'var(--accent)',
+            }}
+          />
+          <span
+            style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}
+          >
+            THP Portal
+          </span>
         </button>
         <nav
           style={{
@@ -200,16 +277,31 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           <span style={{ color: 'var(--text)' }}>How it works</span>
           <a href="#metrics">Metrics</a>
           <a href="#docs">Docs</a>
-          <button type="button" className="btn btn-primary" style={{ height: 30 }} onClick={onSignIn}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ height: 30 }}
+            onClick={onSignIn}
+          >
             Sign in
           </button>
         </nav>
       </header>
 
-      <section style={{ padding: '64px 54px 46px', borderBottom: '1px solid var(--border)' }}>
+      <section
+        style={{
+          padding: '64px 54px 46px',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
         <div
           className="mono"
-          style={{ fontSize: 10.5, letterSpacing: '0.16em', color: '#9b82ea', textTransform: 'uppercase' }}
+          style={{
+            fontSize: 10.5,
+            letterSpacing: '0.16em',
+            color: '#9b82ea',
+            textTransform: 'uppercase',
+          }}
         >
           Build notes · v0.4
         </div>
@@ -224,10 +316,17 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
         >
           How this thing is put together, and why.
         </h1>
-        <p style={{ ...LEAD, font: '400 15.5px/1.65 var(--sans)', maxWidth: '44em', marginTop: 22 }}>
-          A delivery-intelligence portal built solo: one auth layer, three ingestion paths, one
-          dashboard. This page is the reasoning behind each decision — including the ones I'd make
-          differently now.
+        <p
+          style={{
+            ...LEAD,
+            font: '400 15.5px/1.65 var(--sans)',
+            maxWidth: '44em',
+            marginTop: 22,
+          }}
+        >
+          A delivery-intelligence portal built solo: one auth layer, three
+          ingestion paths, one dashboard. This page is the reasoning behind each
+          decision — including the ones I'd make differently now.
         </p>
         <div style={{ display: 'flex', gap: 44, marginTop: 38 }}>
           {[
@@ -237,14 +336,26 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
             ['0', 'runtime dependencies on a vendor SDK'],
           ].map(([v, l]) => (
             <div key={l}>
-              <div className="mono" style={{ fontSize: 24 }}>{v}</div>
-              <div style={{ marginTop: 4, font: '400 11.5px var(--sans)', color: 'rgba(237,237,240,.45)' }}>{l}</div>
+              <div className="mono" style={{ fontSize: 24 }}>
+                {v}
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  font: '400 11.5px var(--sans)',
+                  color: 'rgba(237,237,240,.45)',
+                }}
+              >
+                {l}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '224px minmax(0,1fr)' }}>
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '224px minmax(0,1fr)' }}
+      >
         <aside
           style={{
             borderRight: '1px solid var(--border)',
@@ -256,7 +367,14 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           }}
         >
           <div className="label">Contents</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              marginTop: 16,
+            }}
+          >
             {SECTIONS.map((s, i) => (
               <button
                 key={s}
@@ -265,7 +383,10 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                 onClick={() => {
                   setActive(i);
                   const el = document.getElementById(`hiw-${i}`);
-                  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 24 });
+                  if (el)
+                    window.scrollTo({
+                      top: el.getBoundingClientRect().top + window.scrollY - 24,
+                    });
                 }}
               >
                 {s}
@@ -288,19 +409,38 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           </div>
         </aside>
 
-        <main style={{ padding: '44px 54px 60px', display: 'flex', flexDirection: 'column', gap: 52 }}>
+        <main
+          style={{
+            padding: '44px 54px 60px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 52,
+          }}
+        >
           <section id="hiw-0">
             <SectionHead n="01" title="Design principles" />
             <p style={LEAD}>
-              The portal is a reading instrument, not an app you spend the day in. Every layout
-              decision follows from that: dense numeric tables, monospace for anything comparable,
-              one accent colour reserved for state that matters.
+              The portal is a reading instrument, not an app you spend the day
+              in. Every layout decision follows from that: dense numeric tables,
+              monospace for anything comparable, one accent colour reserved for
+              state that matters.
             </p>
-            <div className="grid-hair" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 24 }}>
+            <div
+              className="grid-hair"
+              style={{ gridTemplateColumns: '1fr 1fr', marginTop: 24 }}
+            >
               {PRINCIPLES.map(([t, b]) => (
                 <div key={t} className="hair-cell">
                   <div style={{ font: '500 13px var(--sans)' }}>{t}</div>
-                  <p style={{ margin: '8px 0 0', font: '400 13px/1.6 var(--sans)', color: 'var(--muted)' }}>{b}</p>
+                  <p
+                    style={{
+                      margin: '8px 0 0',
+                      font: '400 13px/1.6 var(--sans)',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {b}
+                  </p>
                 </div>
               ))}
             </div>
@@ -309,17 +449,31 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           <section id="hiw-1">
             <SectionHead n="02" title="System architecture" />
             <p style={LEAD}>
-              A modular monolith on ECS Fargate. Ingestion is decoupled from serving by the database,
-              not by a queue — at this volume a scheduled worker writing snapshots is simpler to
-              reason about and cheaper to run.
+              A modular monolith on ECS Fargate. Ingestion is decoupled from
+              serving by the database, not by a queue — at this volume a
+              scheduled worker writing snapshots is simpler to reason about and
+              cheaper to run.
             </p>
-            <div className="panel" style={{ marginTop: 26, padding: '26px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 18 }}>
+            <div
+              className="panel"
+              style={{ marginTop: 26, padding: '26px 24px' }}
+            >
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0,1fr))',
+                  gap: 18,
+                }}
+              >
                 {ARCH.map((col) => (
-                  <div key={col.head} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div
+                    key={col.head}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 9 }}
+                  >
                     <div className="label">{col.head}</div>
                     {col.items.map(([title, body], i) => {
-                      const accent = col.accentLast && i === col.items.length - 1;
+                      const accent =
+                        col.accentLast && i === col.items.length - 1;
                       const ghost = !title;
                       return (
                         <div
@@ -330,13 +484,22 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                             border: ghost
                               ? '1px dashed var(--border-strong)'
                               : `1px solid ${accent ? 'rgba(123,92,224,.4)' : 'rgba(255,255,255,.11)'}`,
-                            background: ghost ? 'transparent' : accent ? 'rgba(123,92,224,.09)' : '#131319',
+                            background: ghost
+                              ? 'transparent'
+                              : accent
+                                ? 'rgba(123,92,224,.09)'
+                                : '#131319',
                           }}
                         >
                           {title && (
                             <div
                               className="mono"
-                              style={{ font: '500 12px var(--mono)', color: accent ? 'var(--accent-text)' : 'var(--text)' }}
+                              style={{
+                                font: '500 12px var(--mono)',
+                                color: accent
+                                  ? 'var(--accent-text)'
+                                  : 'var(--text)',
+                              }}
                             >
                               {title}
                             </div>
@@ -369,8 +532,9 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                   color: 'rgba(237,237,240,.42)',
                 }}
               >
-                flow — sources → poller (hourly) → postgres → api → SPA. The browser never talks to a
-                third-party API directly; every credential stays server-side.
+                flow — sources → poller (hourly) → postgres → api → SPA. The
+                browser never talks to a third-party API directly; every
+                credential stays server-side.
               </div>
             </div>
           </section>
@@ -378,13 +542,27 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           <section id="hiw-2">
             <SectionHead n="03" title="Data model & database choice" />
             <p style={LEAD}>
-              Postgres over a time-series store. The workload is small, but it's relational at the
-              edges — projects own connections own snapshots — and mixing a document store in for
-              telemetry would have meant two consistency models for one dashboard. JSONB covers the
+              Postgres over a time-series store. The workload is small, but it's
+              relational at the edges — projects own connections own snapshots —
+              and mixing a document store in for telemetry would have meant two
+              consistency models for one dashboard. JSONB covers the
               shape-varying payloads without giving up joins.
             </p>
-            <div style={{ marginTop: 24, border: '1px solid var(--border)', borderRadius: 9, overflow: 'hidden' }}>
-              <div className="thead" style={{ display: 'grid', gridTemplateColumns: '150px minmax(0,1fr) 190px' }}>
+            <div
+              style={{
+                marginTop: 24,
+                border: '1px solid var(--border)',
+                borderRadius: 9,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                className="thead"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '150px minmax(0,1fr) 190px',
+                }}
+              >
                 <span>TABLE</span>
                 <span>PURPOSE</span>
                 <span>NOTES</span>
@@ -393,7 +571,11 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                 <div
                   key={t}
                   className="tr mono"
-                  style={{ gridTemplateColumns: '150px minmax(0,1fr) 190px', padding: '13px 18px', fontSize: 12 }}
+                  style={{
+                    gridTemplateColumns: '150px minmax(0,1fr) 190px',
+                    padding: '13px 18px',
+                    fontSize: 12,
+                  }}
                 >
                   <span style={{ color: 'var(--accent-text)' }}>{t}</span>
                   <span style={{ color: 'var(--muted)' }}>{p}</span>
@@ -402,15 +584,23 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
               ))}
             </div>
             <div className="note mono">
-              why not Timescale / Influx — under ~10M rows a partitioned Postgres table with BRIN
-              indexes answers the same queries in single-digit ms, and keeps one backup story, one
-              migration tool, one thing to operate.
+              why not Timescale / Influx — under ~10M rows a partitioned
+              Postgres table with BRIN indexes answers the same queries in
+              single-digit ms, and keeps one backup story, one migration tool,
+              one thing to operate.
             </div>
           </section>
 
           <section id="hiw-3">
             <SectionHead n="04" title="Integrations" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 22 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                marginTop: 22,
+              }}
+            >
               {INTEGRATIONS.map((it) => (
                 <div
                   key={it.name}
@@ -422,15 +612,37 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                     alignItems: 'start',
                     padding: '18px 20px',
                     ...(it.highlight
-                      ? { border: '1px solid rgba(123,92,224,.3)', background: 'rgba(123,92,224,.06)' }
+                      ? {
+                          border: '1px solid rgba(123,92,224,.3)',
+                          background: 'rgba(123,92,224,.06)',
+                        }
                       : null),
                   }}
                 >
                   <div>
-                    <div style={{ font: '500 13px var(--sans)' }}>{it.name}</div>
-                    <div className="mono" style={{ marginTop: 4, fontSize: 10.5, color: 'var(--faint)' }}>{it.api}</div>
+                    <div style={{ font: '500 13px var(--sans)' }}>
+                      {it.name}
+                    </div>
+                    <div
+                      className="mono"
+                      style={{
+                        marginTop: 4,
+                        fontSize: 10.5,
+                        color: 'var(--faint)',
+                      }}
+                    >
+                      {it.api}
+                    </div>
                   </div>
-                  <p style={{ margin: 0, font: '400 13px/1.6 var(--sans)', color: 'var(--muted)' }}>{it.body}</p>
+                  <p
+                    style={{
+                      margin: 0,
+                      font: '400 13px/1.6 var(--sans)',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {it.body}
+                  </p>
                   <span
                     className={`pill ${it.tone === 'live' ? 'pill-live' : 'pill-partial'}`}
                     style={{ justifySelf: 'end' }}
@@ -445,14 +657,31 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
           <section id="hiw-4">
             <SectionHead n="05" title="API surface" />
             <p style={LEAD}>
-              REST over GraphQL: the client's read patterns are fixed and few, so a handful of shaped
-              endpoints beats a resolver layer plus query-cost policing. Everything is namespaced
-              under <span className="mono" style={{ fontSize: 13, color: 'var(--accent-text)' }}>/api/v1</span>.
+              REST over GraphQL: the client's read patterns are fixed and few,
+              so a handful of shaped endpoints beats a resolver layer plus
+              query-cost policing. Everything is namespaced under{' '}
+              <span
+                className="mono"
+                style={{ fontSize: 13, color: 'var(--accent-text)' }}
+              >
+                /api/v1
+              </span>
+              .
             </p>
-            <div style={{ marginTop: 22, border: '1px solid var(--border)', borderRadius: 9, overflow: 'hidden' }}>
+            <div
+              style={{
+                marginTop: 22,
+                border: '1px solid var(--border)',
+                borderRadius: 9,
+                overflow: 'hidden',
+              }}
+            >
               <div
                 className="thead"
-                style={{ display: 'grid', gridTemplateColumns: '64px 300px minmax(0,1fr) 110px' }}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '64px 300px minmax(0,1fr) 110px',
+                }}
               >
                 <span>VERB</span>
                 <span>PATH</span>
@@ -469,13 +698,23 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                     fontSize: 12,
                   }}
                 >
-                  <span style={{ color: verb === 'GET' ? 'var(--good)' : 'var(--warn)' }}>{verb}</span>
+                  <span
+                    style={{
+                      color: verb === 'GET' ? 'var(--good)' : 'var(--warn)',
+                    }}
+                  >
+                    {verb}
+                  </span>
                   <span style={{ color: 'rgba(237,237,240,.8)' }}>{path}</span>
                   <span style={{ color: 'var(--muted)' }}>{ret}</span>
                   <span
                     style={{
                       color:
-                        tone === 'admin' ? 'var(--warn)' : tone === 'key' ? '#9b82ea' : 'var(--faint)',
+                        tone === 'admin'
+                          ? 'var(--warn)'
+                          : tone === 'key'
+                            ? '#9b82ea'
+                            : 'var(--faint)',
                     }}
                   >
                     {auth}
@@ -487,11 +726,25 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
 
           <section id="hiw-5">
             <SectionHead n="06" title="Auth & security" />
-            <div className="grid-hair" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))', marginTop: 22 }}>
+            <div
+              className="grid-hair"
+              style={{
+                gridTemplateColumns: 'repeat(3, minmax(0,1fr))',
+                marginTop: 22,
+              }}
+            >
               {SECURITY.map(([t, b]) => (
                 <div key={t} className="hair-cell">
                   <div style={{ font: '500 13px var(--sans)' }}>{t}</div>
-                  <p style={{ margin: '8px 0 0', font: '400 12.5px/1.6 var(--sans)', color: 'var(--muted)' }}>{b}</p>
+                  <p
+                    style={{
+                      margin: '8px 0 0',
+                      font: '400 12.5px/1.6 var(--sans)',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {b}
+                  </p>
                 </div>
               ))}
             </div>
@@ -499,7 +752,9 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
 
           <section id="hiw-6">
             <SectionHead n="07" title="Trade-offs I'd revisit" />
-            <div style={{ marginTop: 20, borderTop: '1px solid var(--border)' }}>
+            <div
+              style={{ marginTop: 20, borderTop: '1px solid var(--border)' }}
+            >
               {TRADEOFFS.map(([t, b]) => (
                 <div
                   key={t}
@@ -512,7 +767,14 @@ export default function HowItWorksPage({ onSignIn, onBack }: Props) {
                   }}
                 >
                   <span style={{ font: '500 13.5px var(--sans)' }}>{t}</span>
-                  <span style={{ font: '400 13px/1.6 var(--sans)', color: 'var(--muted)' }}>{b}</span>
+                  <span
+                    style={{
+                      font: '400 13px/1.6 var(--sans)',
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {b}
+                  </span>
                 </div>
               ))}
             </div>

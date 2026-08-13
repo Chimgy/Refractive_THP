@@ -1,7 +1,19 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { RequireLiveAuth } from '../auth/decorators/require-live-auth.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { LiveAuthGuard } from '../auth/guards/live-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user.type';
 import { RedisService } from '../redis/redis.service';
@@ -14,7 +26,7 @@ import { CompanyInvitesService } from './company-invites.service';
 import { CreateInviteDto } from './dto/create-invite.dto';
 
 @Controller('companies')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, LiveAuthGuard)
 export class CompaniesController {
   constructor(
     private readonly companiesService: CompaniesService,
@@ -25,21 +37,36 @@ export class CompaniesController {
   ) {}
 
   @Roles('admin')
+  @RequireLiveAuth()
   @Post('invites')
-  createInvite(@CurrentUser() admin: AuthenticatedUser, @Body() dto: CreateInviteDto) {
-    return this.companyInvitesService.create(admin.companyId, dto.role ?? 'member', admin.userId);
+  createInvite(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Body() dto: CreateInviteDto,
+  ) {
+    return this.companyInvitesService.create(
+      admin.companyId,
+      dto.role ?? 'member',
+      admin.userId,
+    );
   }
 
+  // Read-only — trusts the JWT for its TTL rather than paying a live check.
   @Roles('admin')
   @Get('invites')
   async listInvites(@CurrentUser() admin: AuthenticatedUser) {
-    const invites = await this.companyInvitesService.findByCompany(admin.companyId);
+    const invites = await this.companyInvitesService.findByCompany(
+      admin.companyId,
+    );
     return invites.map(({ tokenHash: _tokenHash, ...rest }) => rest);
   }
 
   @Roles('admin')
+  @RequireLiveAuth()
   @Patch('invites/:inviteId/revoke')
-  async revokeInvite(@CurrentUser() admin: AuthenticatedUser, @Param('inviteId') inviteId: string) {
+  async revokeInvite(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Param('inviteId') inviteId: string,
+  ) {
     await this.companyInvitesService.revoke(admin.companyId, inviteId);
     return { status: 'revoked' };
   }
@@ -51,8 +78,12 @@ export class CompaniesController {
   }
 
   @Roles('admin')
+  @RequireLiveAuth()
   @Patch('members/:userId/ban')
-  async ban(@CurrentUser() admin: AuthenticatedUser, @Param('userId') userId: string) {
+  async ban(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Param('userId') userId: string,
+  ) {
     if (userId === admin.userId) {
       throw new BadRequestException('Cannot ban your own account');
     }
@@ -70,8 +101,12 @@ export class CompaniesController {
   }
 
   @Roles('admin')
+  @RequireLiveAuth()
   @Patch('members/:userId/unban')
-  async unban(@CurrentUser() admin: AuthenticatedUser, @Param('userId') userId: string) {
+  async unban(
+    @CurrentUser() admin: AuthenticatedUser,
+    @Param('userId') userId: string,
+  ) {
     const target = await this.usersService.findById(userId);
     if (!target || target.companyId !== admin.companyId) {
       throw new NotFoundException('User not found');
@@ -86,6 +121,7 @@ export class CompaniesController {
   // all refresh tokens and evict each Redis cache entry so the very next
   // request per user is a guaranteed cache-miss that re-checks company.isActive.
   @Roles('admin')
+  @RequireLiveAuth()
   @Patch('deactivate')
   async deactivateCompany(@CurrentUser() admin: AuthenticatedUser) {
     const members = await this.usersService.findByCompany(admin.companyId);

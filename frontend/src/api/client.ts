@@ -16,36 +16,46 @@ type RequestOptions = {
   body?: unknown;
 };
 
-async function rawRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function rawRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { accessToken } = getTokens();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
     method: options.method ?? 'GET',
     headers,
+    credentials: 'include', // sends the httpOnly refresh cookie automatically
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
   if (!res.ok) {
     const payload = await res.json().catch(() => null);
     const message = payload?.message ?? res.statusText;
-    throw new ApiError(res.status, Array.isArray(message) ? message.join(', ') : message);
+    throw new ApiError(
+      res.status,
+      Array.isArray(message) ? message.join(', ') : message,
+    );
   }
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
-// Swaps the stored refresh token for a fresh access/refresh pair. Logs the
+// Exchanges the httpOnly refresh cookie for a fresh access token. Logs the
 // session out locally if the refresh token itself has expired or been revoked.
 //
 // Refresh tokens rotate on use, so two concurrent callers (React StrictMode's
-// double-invoked effects in dev, two tabs sharing localStorage, two 401s
-// firing at once) must not each fire their own /auth/refresh: the second one
-// would present an already-rotated token, get rejected, and clear the
-// perfectly good session the first call just established. Sharing one
-// in-flight promise makes every concurrent caller await the same result.
+// double-invoked effects in dev, two 401s firing at once) must not each fire
+// their own /auth/refresh: the second one would present an already-rotated
+// token, get rejected, and clear the perfectly good session the first call
+// just established. Sharing one in-flight promise makes every concurrent
+// caller await the same result. (True multi-tab races are a known, accepted
+// gap — each tab has its own module state.)
 let refreshPromise: Promise<string | null> | null = null;
 
 export function refreshSession(): Promise<string | null> {
@@ -58,14 +68,11 @@ export function refreshSession(): Promise<string | null> {
 }
 
 async function doRefresh(): Promise<string | null> {
-  const { refreshToken } = getTokens();
-  if (!refreshToken) return null;
   try {
-    const result = await rawRequest<{ accessToken: string; refreshToken: string }>('/auth/refresh', {
+    const result = await rawRequest<{ accessToken: string }>('/auth/refresh', {
       method: 'POST',
-      body: { refreshToken },
     });
-    setTokens({ accessToken: result.accessToken, refreshToken: result.refreshToken });
+    setTokens({ accessToken: result.accessToken });
     return result.accessToken;
   } catch {
     clearTokens();
@@ -75,11 +82,17 @@ async function doRefresh(): Promise<string | null> {
 
 // One 401 retry after a silent refresh — covers an access token that expired
 // mid-session. /auth/refresh itself never retries, to avoid looping.
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   try {
     return await rawRequest<T>(path, options);
   } catch (err) {
-    const isAuthPath = path === '/auth/refresh' || path === '/auth/login' || path === '/auth/register';
+    const isAuthPath =
+      path === '/auth/refresh' ||
+      path === '/auth/login' ||
+      path === '/auth/register';
     if (err instanceof ApiError && err.status === 401 && !isAuthPath) {
       const refreshed = await refreshSession();
       if (refreshed) return rawRequest<T>(path, options);

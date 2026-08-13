@@ -19,7 +19,10 @@ export class UsersService {
   }
 
   findByCompany(companyId: string): Promise<User[]> {
-    return this.usersRepository.find({ where: { companyId, deletedAt: IsNull() }, order: { createdAt: 'ASC' } });
+    return this.usersRepository.find({
+      where: { companyId, deletedAt: IsNull() },
+      order: { createdAt: 'ASC' },
+    });
   }
 
   create(
@@ -29,7 +32,13 @@ export class UsersService {
     companyId: string,
     displayName: string | null = null,
   ): Promise<User> {
-    const user = this.usersRepository.create({ email, passwordHash, role, companyId, displayName });
+    const user = this.usersRepository.create({
+      email,
+      passwordHash,
+      role,
+      companyId,
+      displayName,
+    });
     return this.usersRepository.save(user);
   }
 

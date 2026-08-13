@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { RouterModule } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
+import { InternalModule } from './internal/internal.module';
 import { RedisModule } from './redis/redis.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
+import { TenantModule } from './tenant/tenant.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -24,9 +27,26 @@ import { UsersModule } from './users/users.module';
     }),
     RedisModule,
     UsersModule,
-    CompaniesModule,
     RefreshTokensModule,
     AuthModule,
+    TenantModule,
+    InternalModule,
+    // Auth silo needs no prefix (AuthController is already `/api/auth/*`).
+    // Tenant/Internal silos get their prefix applied here, at the module
+    // boundary, so the silo IS the module boundary — the seam needed to
+    // later extract one into its own deployable.
+    //
+    // RouterModule only tags the exact module class(es) listed — it does NOT
+    // walk a module's own `imports` — so every module that actually declares
+    // controllers must be listed explicitly, either as the `module` or in
+    // `children` (children inherit the parent path). TenantModule itself
+    // declares no controllers; CompaniesModule does, so it's listed here too.
+    // Any future tenant-facing module (e.g. a ProjectsModule) needs adding to
+    // BOTH TenantModule's `imports` and this `children` array.
+    RouterModule.register([
+      { path: 'tenant', module: TenantModule, children: [CompaniesModule] },
+      { path: 'internal', module: InternalModule },
+    ]),
   ],
   controllers: [AppController],
   providers: [AppService],

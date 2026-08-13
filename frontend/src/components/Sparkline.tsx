@@ -25,7 +25,11 @@ export default function Sparkline({
     .join(' ');
 
   return (
-    <svg viewBox="0 0 90 26" preserveAspectRatio="none" style={{ width, height }}>
+    <svg
+      viewBox="0 0 90 26"
+      preserveAspectRatio="none"
+      style={{ width, height }}
+    >
       <polyline
         points={path}
         fill="none"

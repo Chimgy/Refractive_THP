@@ -1,4 +1,9 @@
-import { ConflictException, GoneException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  GoneException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomBytes } from 'crypto';
 import { Repository } from 'typeorm';
@@ -20,9 +25,15 @@ export class CompanyInvitesService {
     return createHash('sha256').update(raw).digest('hex');
   }
 
-  async create(companyId: string, role: UserRole, createdByUserId: string): Promise<{ token: string; expiresAt: Date }> {
+  async create(
+    companyId: string,
+    role: UserRole,
+    createdByUserId: string,
+  ): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(24).toString('hex');
-    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const invite = this.invitesRepository.create({
       companyId,
@@ -38,7 +49,9 @@ export class CompanyInvitesService {
   }
 
   async consume(rawToken: string): Promise<ConsumedInvite> {
-    const invite = await this.invitesRepository.findOne({ where: { tokenHash: this.hash(rawToken) } });
+    const invite = await this.invitesRepository.findOne({
+      where: { tokenHash: this.hash(rawToken) },
+    });
     if (!invite) {
       throw new NotFoundException('Invalid invite');
     }
@@ -59,11 +72,16 @@ export class CompanyInvitesService {
   }
 
   findByCompany(companyId: string): Promise<CompanyInvite[]> {
-    return this.invitesRepository.find({ where: { companyId }, order: { createdAt: 'DESC' } });
+    return this.invitesRepository.find({
+      where: { companyId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async revoke(companyId: string, inviteId: string): Promise<void> {
-    const invite = await this.invitesRepository.findOne({ where: { id: inviteId } });
+    const invite = await this.invitesRepository.findOne({
+      where: { id: inviteId },
+    });
     if (!invite || invite.companyId !== companyId) {
       throw new NotFoundException('Invite not found');
     }

@@ -47,9 +47,10 @@ Route 53 → CloudFront → S3 (React static build)
 **Alternative hosting noted, not built:** self-managed ECS-on-EC2 or raw EC2+Docker Compose.
 
 **Why Fargate, precisely (for the write-up):**
+
 - EC2 is a VM, not a container service — ECS is the orchestrator that decides where containers run; Fargate is the ECS launch type where AWS supplies that compute for you, vs. ECS-on-EC2 where you provision and manage the underlying instances yourself.
 - The ALB's job (route traffic across running containers, health-check them) is identical either way — it's not what Fargate saves you.
-- What Fargate removes is a **second, dependent scaling layer**. Both setups need ECS Service Auto Scaling (decides how many *tasks* to run, based on CPU/memory/request count). ECS-on-EC2 additionally needs an EC2 Auto Scaling Group (decides how many *instances* exist) linked via ECS Capacity Providers — if a task needs to schedule and there's no room on existing instances, it sits pending until the EC2 ASG notices and boots a new instance (a real, minutes-long lag). Fargate has no second layer and no lag.
+- What Fargate removes is a **second, dependent scaling layer**. Both setups need ECS Service Auto Scaling (decides how many _tasks_ to run, based on CPU/memory/request count). ECS-on-EC2 additionally needs an EC2 Auto Scaling Group (decides how many _instances_ exist) linked via ECS Capacity Providers — if a task needs to schedule and there's no room on existing instances, it sits pending until the EC2 ASG notices and boots a new instance (a real, minutes-long lag). Fargate has no second layer and no lag.
 - ECS-on-EC2 also means owning: OS patching, Docker/ECS agent updates, instance sizing, disk cleanup, SSH/security-group management, and handling instance failure/replacement — all real ongoing surface area that buys nothing for this project's actual point (demonstrating DORA metrics, telemetry, dashboards).
 - Subnets are a one-time VPC design decision either way, not something scaling creates — worth not conflating the two.
 
@@ -62,9 +63,10 @@ Route 53 → CloudFront → S3 (React static build)
 **Webhook ingestion — mention in final write-up, not built.** `POST /webhooks/github` (HMAC-signature verified) for real-time events (push, PR opened/merged, release published) is the natural "next step" for lower-latency data — good to name as a considered future improvement, not worth the build time (public endpoint + signature verification) given polling already covers the metrics needed.
 
 **Metrics computed:**
+
 - Deployment Frequency (releases/tags, or merges to `main`)
 - Lead Time for Changes (first commit → PR merge)
-- *(stretch)* PR review turnaround, PR size, issue-to-first-commit time
+- _(stretch)_ PR review turnaround, PR size, issue-to-first-commit time
 
 **Not included** (need data GitHub doesn't have): Change Failure Rate, MTTR — note as "future: requires incident tracking integration."
 
@@ -75,6 +77,7 @@ Route 53 → CloudFront → S3 (React static build)
 ## 5. Post-development metrics (live infra)
 
 **Scheduled poller** — runs hourly by default, plus a manual "refresh now" button per project. Confirmed comfortably within free/near-free limits for this scale:
+
 - GitHub REST API: 5,000 requests/hour (authenticated) — nowhere close to hit for one org, hourly
 - CloudWatch: `GetMetricData` is excluded from the free tier (~$0.01/1,000 requests) but negligible at this volume; `GetMetricStatistics` covers the same use case and is included in the 1M-request free tier if avoiding cost entirely matters
 - Cloudflare Analytics API: general token rate limit (~1,200 requests/5 min) — hourly polling isn't close
@@ -82,12 +85,14 @@ Route 53 → CloudFront → S3 (React static build)
 Build order: **Cloudflare Analytics first** (zone already available to test against), AWS CloudWatch integration once a test AWS account/instance is set up.
 
 **From AWS CloudWatch** (if project's live app runs on ECS/EC2/RDS):
+
 - Request count, 4xx/5xx error rate, latency (p50/p99) — from ALB
 - CPU/memory utilization — ECS task metrics
 - RDS: connections, CPU, storage, IOPS
 - Deployment events — ECS service deployment history (new task def, rollback)
 
 **From Cloudflare Analytics API** (if project sits behind Cloudflare):
+
 - Total requests, unique visitors, bandwidth
 - Cache hit ratio, status code breakdown
 - Threats blocked / bot traffic
@@ -101,10 +106,14 @@ Build order: **Cloudflare Analytics first** (zone already available to test agai
 Single drop-in file, no new backend surface — POSTs to the same ingestion endpoint the portal already exposes.
 
 ```html
-<script src="https://yourapp.com/THP_analytics.js" data-project-id="abc123"></script>
+<script
+  src="https://yourapp.com/THP_analytics.js"
+  data-project-id="abc123"
+></script>
 ```
 
 **Metrics captured:**
+
 - Page views (URL, referrer, timestamp)
 - Session start/end, rough duration
 - Click events on tagged elements (`data-thp-track="..."`)

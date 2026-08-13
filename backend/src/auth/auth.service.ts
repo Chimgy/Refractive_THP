@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { CompanyInvitesService } from '../companies/company-invites.service';
@@ -16,7 +21,11 @@ import { JwtPayload } from './types/jwt-payload.type';
 
 const SALT_ROUNDS = 10;
 
-export type AuthResult = { accessToken: string; refreshToken: string; user: SafeUser };
+export type AuthResult = {
+  accessToken: string;
+  refreshToken: string;
+  user: SafeUser;
+};
 export type RefreshResult = { accessToken: string; refreshToken: string };
 
 @Injectable()
@@ -40,7 +49,13 @@ export class AuthService {
     // via an invite gets whatever role that invite grants.
     const company = await this.companiesService.create(dto.companyName);
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
-    const user = await this.usersService.create(dto.email, passwordHash, 'admin', company.id, dto.displayName);
+    const user = await this.usersService.create(
+      dto.email,
+      passwordHash,
+      'admin',
+      company.id,
+      dto.displayName,
+    );
 
     return this.issueAuthResult(user);
   }
@@ -53,7 +68,12 @@ export class AuthService {
 
     const invite = await this.companyInvitesService.consume(token);
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
-    const user = await this.usersService.create(dto.email, passwordHash, invite.role, invite.companyId);
+    const user = await this.usersService.create(
+      dto.email,
+      passwordHash,
+      invite.role,
+      invite.companyId,
+    );
 
     return this.issueAuthResult(user);
   }
@@ -76,7 +96,8 @@ export class AuthService {
   }
 
   async refresh(rawRefreshToken: string): Promise<RefreshResult> {
-    const { userId, token } = await this.refreshTokensService.rotate(rawRefreshToken);
+    const { userId, token } =
+      await this.refreshTokensService.rotate(rawRefreshToken);
 
     const user = await this.usersService.findById(userId);
     if (!user || !user.isActive) {
@@ -97,12 +118,20 @@ export class AuthService {
 
   private async issueAuthResult(user: User): Promise<AuthResult> {
     const accessToken = this.signAccessToken(user);
-    const { token: refreshToken } = await this.refreshTokensService.issue(user.id);
+    const { token: refreshToken } = await this.refreshTokensService.issue(
+      user.id,
+    );
     return { accessToken, refreshToken, user: toSafeUser(user) };
   }
 
   private signAccessToken(user: User): string {
-    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role, companyId: user.companyId };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      companyId: user.companyId,
+      displayName: user.displayName,
+    };
     return this.jwtService.sign(payload);
   }
 }

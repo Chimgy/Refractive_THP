@@ -9,7 +9,11 @@ import { CompanyInvite } from './entities/company-invite.entity';
 import { Company } from './entities/company.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Company, CompanyInvite]), UsersModule, RefreshTokensModule],
+  imports: [
+    TypeOrmModule.forFeature([Company, CompanyInvite]),
+    UsersModule,
+    RefreshTokensModule,
+  ],
   controllers: [CompaniesController],
   providers: [CompaniesService, CompanyInvitesService],
   exports: [CompaniesService, CompanyInvitesService],

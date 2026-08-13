@@ -17,7 +17,9 @@ export class RefreshTokensService {
     private readonly tokensRepository: Repository<RefreshToken>,
     configService: ConfigService,
   ) {
-    const ttlDays = Number(configService.get<string>('REFRESH_TOKEN_TTL_DAYS', '30'));
+    const ttlDays = Number(
+      configService.get<string>('REFRESH_TOKEN_TTL_DAYS', '30'),
+    );
     this.ttlMs = ttlDays * 24 * 60 * 60 * 1000;
   }
 
@@ -29,7 +31,12 @@ export class RefreshTokensService {
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + this.ttlMs);
 
-    const row = this.tokensRepository.create({ userId, tokenHash: this.hash(token), expiresAt, isRevoked: false });
+    const row = this.tokensRepository.create({
+      userId,
+      tokenHash: this.hash(token),
+      expiresAt,
+      isRevoked: false,
+    });
     await this.tokensRepository.save(row);
 
     return { token, expiresAt };
@@ -41,13 +48,17 @@ export class RefreshTokensService {
   // legitimate client — so every other live session for this user gets
   // revoked too, forcing a re-login.
   async rotate(rawToken: string): Promise<RotatedToken> {
-    const row = await this.tokensRepository.findOne({ where: { tokenHash: this.hash(rawToken) } });
+    const row = await this.tokensRepository.findOne({
+      where: { tokenHash: this.hash(rawToken) },
+    });
     if (!row) {
       throw new UnauthorizedException('Invalid refresh token');
     }
     if (row.isRevoked) {
       await this.revokeAllForUser(row.userId);
-      throw new UnauthorizedException('Refresh token reuse detected — all sessions revoked');
+      throw new UnauthorizedException(
+        'Refresh token reuse detected — all sessions revoked',
+      );
     }
     if (row.expiresAt.getTime() < Date.now()) {
       throw new UnauthorizedException('Refresh token expired');
@@ -62,10 +73,16 @@ export class RefreshTokensService {
   }
 
   async revoke(rawToken: string): Promise<void> {
-    await this.tokensRepository.update({ tokenHash: this.hash(rawToken) }, { isRevoked: true, revokedAt: new Date() });
+    await this.tokensRepository.update(
+      { tokenHash: this.hash(rawToken) },
+      { isRevoked: true, revokedAt: new Date() },
+    );
   }
 
   async revokeAllForUser(userId: string): Promise<void> {
-    await this.tokensRepository.update({ userId, isRevoked: false }, { isRevoked: true, revokedAt: new Date() });
+    await this.tokensRepository.update(
+      { userId, isRevoked: false },
+      { isRevoked: true, revokedAt: new Date() },
+    );
   }
 }

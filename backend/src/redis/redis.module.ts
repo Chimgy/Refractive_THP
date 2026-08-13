@@ -12,7 +12,8 @@ import { RedisService } from './redis.service';
       provide: REDIS_CLIENT,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const useTls = configService.get<string>('REDIS_TLS', 'false') === 'true';
+        const useTls =
+          configService.get<string>('REDIS_TLS', 'false') === 'true';
         return new Redis({
           host: configService.get<string>('REDIS_HOST', 'localhost'),
           port: Number(configService.get<string>('REDIS_PORT', '6379')),

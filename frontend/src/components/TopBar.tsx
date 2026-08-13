@@ -28,15 +28,28 @@ export default function TopBar({
           onClick={onProjects}
         >
           {projectName}
-          <span className="mono faint" style={{ fontSize: 10 }}>⌄</span>
+          <span className="mono faint" style={{ fontSize: 10 }}>
+            ⌄
+          </span>
         </button>
-        <span className="mono faint" style={{ fontSize: 11.5 }}>{subtitle}</span>
+        <span className="mono faint" style={{ fontSize: 11.5 }}>
+          {subtitle}
+        </span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button type="button" className="btn" style={{ height: 30 }} onClick={onNewProject}>
+        <button
+          type="button"
+          className="btn"
+          style={{ height: 30 }}
+          onClick={onNewProject}
+        >
           + New project
         </button>
-        <button type="button" className="btn btn-primary" style={{ height: 30 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ height: 30 }}
+        >
           Refresh
         </button>
         <ProfileMenu onHowItWorks={onHowItWorks} onSignOut={onSignOut} />

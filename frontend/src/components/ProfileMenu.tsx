@@ -39,7 +39,8 @@ export default function ProfileMenu({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+      if (wrap.current && !wrap.current.contains(e.target as Node))
+        setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -71,7 +72,12 @@ export default function ProfileMenu({
       {open && (
         <div className="menu" role="menu">
           <div className="menu-head">
-            <div className="avatar" style={{ width: 34, height: 34, fontSize: 12 }}>{initials}</div>
+            <div
+              className="avatar"
+              style={{ width: 34, height: 34, fontSize: 12 }}
+            >
+              {initials}
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ font: '500 13px var(--sans)' }}>{name}</div>
               <div
@@ -88,27 +94,50 @@ export default function ProfileMenu({
                 {email}
               </div>
             </div>
-            <span className="pill pill-dev" style={{ marginLeft: 'auto', flex: 'none' }}>{role}</span>
+            <span
+              className="pill pill-dev"
+              style={{ marginLeft: 'auto', flex: 'none' }}
+            >
+              {role}
+            </span>
           </div>
 
           <div className="menu-group">
-            <button type="button" className="menu-item" role="menuitem">Account settings</button>
+            <button type="button" className="menu-item" role="menuitem">
+              Account settings
+            </button>
             <button type="button" className="menu-item" role="menuitem">
               Connections
               {pendingConnections > 0 && (
-                <span className="mono" style={{ fontSize: 9.5, fontWeight: 500, color: 'var(--warn)' }}>
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 9.5,
+                    fontWeight: 500,
+                    color: 'var(--warn)',
+                  }}
+                >
                   {pendingConnections} PENDING
                 </span>
               )}
             </button>
-            <button type="button" className="menu-item" role="menuitem">API tokens</button>
-            <button type="button" className="menu-item" role="menuitem">Team &amp; roles</button>
+            <button type="button" className="menu-item" role="menuitem">
+              API tokens
+            </button>
+            <button type="button" className="menu-item" role="menuitem">
+              Team &amp; roles
+            </button>
           </div>
 
           <div className="menu-group">
             <button type="button" className="menu-item" role="menuitem">
               Theme
-              <span className="mono" style={{ fontSize: 10, color: 'var(--faint)' }}>DARK</span>
+              <span
+                className="mono"
+                style={{ fontSize: 10, color: 'var(--faint)' }}
+              >
+                DARK
+              </span>
             </button>
             <button
               type="button"
@@ -120,7 +149,12 @@ export default function ProfileMenu({
               }}
             >
               How it works
-              <span className="mono" style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}>↗</span>
+              <span
+                className="mono"
+                style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}
+              >
+                ↗
+              </span>
             </button>
           </div>
 
@@ -139,7 +173,9 @@ export default function ProfileMenu({
           </div>
 
           <div className="menu-foot mono">
-            <span>{sessionExpiry ? `session expires ${sessionExpiry}` : email}</span>
+            <span>
+              {sessionExpiry ? `session expires ${sessionExpiry}` : email}
+            </span>
             <span>{version}</span>
           </div>
         </div>
