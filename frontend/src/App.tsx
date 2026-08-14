@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import DashboardPage from './pages/DashboardPage';
+import DocsPage from './pages/DocsPage';
 import EmptyStatePage from './pages/EmptyStatePage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import LoginPage from './pages/LoginPage';
 import ProjectsPage from './pages/ProjectsPage';
 import SignupPage from './pages/SignupPage';
 import './styles/portal.css';
+import MetricsPage from './pages/MetricsPage';
 
 export default function App() {
   return (
@@ -65,6 +67,8 @@ function AppRoutes() {
         }
       />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/metrics" element={<MetricsPage />} />
+      <Route path="/docs" element={<DocsPage />} />
       <Route
         path="/projects"
         element={

@@ -1,5 +1,6 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RouterModule } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -28,6 +29,27 @@ import { UsersModule } from './users/users.module';
       synchronize: process.env.NODE_ENV !== 'production',
     }),
     RedisModule,
+    // Root BullMQ connection — a dedicated ioredis client, not the shared one
+    // from RedisModule. BullMQ's blocking commands need
+    // `maxRetriesPerRequest: null`, which isn't something the general-purpose
+    // client (counters, HLL, auth cache) should also be forced into. Same
+    // host/port/password/TLS as RedisModule, just a separate connection.
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: Number(configService.get<string>('REDIS_PORT', '6379')),
+          password: configService.get<string>('REDIS_PASSWORD') || undefined,
+          tls:
+            configService.get<string>('REDIS_TLS', 'false') === 'true'
+              ? {}
+              : undefined,
+          maxRetriesPerRequest: null,
+        },
+      }),
+    }),
     UsersModule,
     RefreshTokensModule,
     AuthModule,

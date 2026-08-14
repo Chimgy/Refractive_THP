@@ -17,9 +17,9 @@ One portal, one auth layer, one dashboard — three data domains feeding into it
 - **Auth** — login/logout, JWT-based; `role` column on `users` (`admin` / `member`) from day one — trivial to add now, gate a couple of admin-only actions (e.g. connecting a new AWS/GitHub credential) behind it, skip building any real permissions UI
 - **Project entity** — the thing that ties everything together; a project can have a linked GitHub repo, a linked live deployment, or both
 - **Dashboard** — tables + graphs (recharts) across all three domains, filterable per project
-- **In-development view** — DORA-style metrics per project (see §4)
-- **Post-development view** — infra health metrics per project (see §5)
-- **External telemetry view** — usage metrics per project via the JS snippet (see §6)
+- **In-development view** — DORA-style metrics per project (see section 4)
+- **Post-development view** — infra health metrics per project (see section 5)
+- **External telemetry view** — usage metrics per project via the JS snippet (see section 6)
 
 ---
 
@@ -41,7 +41,7 @@ Route 53 → CloudFront → S3 (React static build)
 + ECR (Docker image registry)
 + Secrets Manager (GitHub PAT, AWS keys, Cloudflare tokens — encrypted, never plain columns)
 + CloudWatch (portal's own logs — separate from the CloudWatch metrics you're *pulling* from users' target infra)
-+ EventBridge Scheduler or ECS scheduled task — cron trigger for the poller job (§5)
++ EventBridge Scheduler or ECS scheduled task — cron trigger for the poller job (section 5)
 ```
 
 **Alternative hosting noted, not built:** self-managed ECS-on-EC2 or raw EC2+Docker Compose.

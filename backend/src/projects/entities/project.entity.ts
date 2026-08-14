@@ -11,7 +11,7 @@ import {
 import { Company } from '../../companies/entities/company.entity';
 
 // Gives the telemetry embed's `projectId` somewhere to actually belong to
-// (external_data.md §5.1) — `id` (uuid) is what ends up in `data-project-id`
+// (external_data.md section 5.1) — `id` (uuid) is what ends up in `data-project-id`
 // on a third-party site's <script> tag. Slug is unique per company, not
 // globally, since two different companies each embedding on their own site
 // may reasonably both want e.g. "landing-page".
@@ -33,6 +33,14 @@ export class Project {
 
   @Column()
   slug: string;
+
+  // Origins the embed is allowed to post from — checked against the
+  // request's Origin (falling back to Referer) header on POST /telemetry
+  // (external_data.md roadmap item 6). Empty by default: a project with
+  // nothing configured here fails closed, same as an unregistered
+  // projectId, rather than silently accepting from anywhere.
+  @Column({ type: 'simple-array', default: '' })
+  allowedOrigins: string[];
 
   @CreateDateColumn()
   createdAt: Date;

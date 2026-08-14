@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authErrorMessage, useAuth } from '../auth/AuthContext';
+import SiteFooter from '../components/SiteFooter';
+import SiteHeader from '../components/SiteHeader';
 import SsoButton, { SsoDivider } from '../components/SsoButtons';
 
 const domains = [
@@ -50,49 +52,7 @@ export default function LoginPage() {
     <div
       style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
     >
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '18px 34px',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 4,
-              background: 'var(--accent)',
-            }}
-          />
-          <span
-            style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}
-          >
-            THP Portal
-          </span>
-        </div>
-        <nav
-          style={{
-            display: 'flex',
-            gap: 26,
-            font: '400 12.5px var(--sans)',
-            color: 'rgba(237,237,240,.5)',
-          }}
-        >
-          <button
-            type="button"
-            className="link-btn"
-            onClick={() => navigate('/how-it-works')}
-          >
-            How it works
-          </button>
-          <a href="#metrics">Metrics</a>
-          <a href="#docs">Docs</a>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <div
         style={{
@@ -362,6 +322,8 @@ export default function LoginPage() {
           </div>
         </section>
       </div>
+
+      <SiteFooter />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   Controller,
   Get,
@@ -8,15 +9,18 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import type { Queue } from 'bullmq';
 import type { Request } from 'express';
 import { getClientCountry } from './client-geo.util';
 import { getClientIp } from './client-ip.util';
+import { getRequestOrigin } from './client-origin.util';
+import {
+  TELEMETRY_INGEST_QUEUE,
+  TelemetryIngestJobData,
+} from './telemetry-ingest.queue';
 import { THP_ANALYTICS_SCRIPT } from './telemetry-script';
-import { TelemetryCountersService } from './telemetry-counters.service';
-import { TelemetryErrorsService } from './telemetry-errors.service';
-import { TelemetryEventsService } from './telemetry-events.service';
-import { TelemetrySnapshotsService } from './telemetry-snapshots.service';
-import { TelemetryUniquesService } from './telemetry-uniques.service';
+import { TelemetryOriginGuardService } from './telemetry-origin-guard.service';
+import { TelemetryRateLimitService } from './telemetry-rate-limit.service';
 
 // Deliberately outside the tenant/internal silos and the global `api`
 // prefix (see main.ts) — this is the one surface embedded on *other*
@@ -31,11 +35,10 @@ export class TelemetryController {
   private readonly logger = new Logger(TelemetryController.name);
 
   constructor(
-    private readonly snapshots: TelemetrySnapshotsService,
-    private readonly events: TelemetryEventsService,
-    private readonly counters: TelemetryCountersService,
-    private readonly uniques: TelemetryUniquesService,
-    private readonly errors: TelemetryErrorsService,
+    @InjectQueue(TELEMETRY_INGEST_QUEUE)
+    private readonly queue: Queue<TelemetryIngestJobData>,
+    private readonly rateLimit: TelemetryRateLimitService,
+    private readonly originGuard: TelemetryOriginGuardService,
   ) {}
 
   @Get('THP_analytics.js')
@@ -45,6 +48,13 @@ export class TelemetryController {
     return THP_ANALYTICS_SCRIPT;
   }
 
+  // Validates and enqueues only — the actual six-way write fan-out
+  // (snapshots/events/counters/uniques/errors/country) happens off the
+  // request path in TelemetryIngestProcessor (external_data.md roadmap
+  // item 5). Always 204 regardless of outcome: sendBeacon never checks the
+  // response and the fetch fallback swallows errors, so there's no
+  // legitimate visitor-facing use for a different status code here —
+  // rejections are logged server-side instead.
   @Post('telemetry')
   @HttpCode(204)
   @Header('Access-Control-Allow-Origin', '*')
@@ -65,43 +75,37 @@ export class TelemetryController {
     const projectId =
       typeof payload.projectId === 'string' ? payload.projectId || null : null;
     const userAgent = req.get('user-agent') ?? null;
+    const ip = getClientIp(req);
 
-    // allSettled, not all: one destination erroring (e.g. a Redis hiccup)
-    // must not stop the others from landing, and must never surface as a
-    // 500 — sendBeacon doesn't check responses and the fetch fallback
-    // swallows errors, so a non-204 here is invisible to real visitors
-    // anyway. Each failure is logged individually so it's not silently
-    // lost; true partial-failure handling (retries, a queue) is the
-    // roadmap's write-path decoupling item, not this fix.
-    const destinations: [string, Promise<void>][] = [
-      ['snapshots', this.snapshots.capture(payload, { projectId, userAgent })],
-      ['events', this.events.recordBatch(payload, { projectId })],
-      ['counters', this.counters.recordBatch(payload, { projectId })],
-      [
-        'uniques',
-        this.uniques.recordVisit({
-          projectId,
-          ip: getClientIp(req),
-          userAgent,
-        }),
-      ],
-      ['errors', this.errors.recordBatch(payload, { projectId })],
-      [
-        'country',
-        this.counters.recordCountry({
-          projectId,
-          country: getClientCountry(req),
-        }),
-      ],
-    ];
+    // Cheapest check first — a single Redis INCR, no DB round trip — so an
+    // abusive caller gets capped before it costs a Postgres lookup too.
+    if (!(await this.rateLimit.allow(projectId ?? 'unknown', ip))) {
+      this.logger.warn(
+        `Telemetry rate limit exceeded (projectId=${projectId ?? 'unknown'}, ip=${ip})`,
+      );
+      return;
+    }
 
-    const results = await Promise.allSettled(destinations.map(([, p]) => p));
-    results.forEach((result, i) => {
-      if (result.status === 'rejected') {
-        this.logger.error(
-          `Telemetry write failed for destination "${destinations[i][0]}" (projectId=${projectId ?? 'unknown'}): ${String(result.reason)}`,
-        );
-      }
-    });
+    // Fails closed (external_data.md roadmap item 6): no projectId, an
+    // unregistered one, or a registered project whose allowedOrigins
+    // doesn't include this request's origin all get dropped the same way —
+    // silently, from the caller's perspective, same as every other outcome
+    // of this endpoint.
+    const origin = getRequestOrigin(req);
+    if (!projectId || !(await this.originGuard.isAllowed(projectId, origin))) {
+      this.logger.warn(
+        `Telemetry request rejected: unregistered project or disallowed origin (projectId=${projectId ?? 'none'}, origin=${origin ?? 'none'})`,
+      );
+      return;
+    }
+
+    const jobData: TelemetryIngestJobData = {
+      payload,
+      projectId,
+      userAgent,
+      ip,
+      country: getClientCountry(req),
+    };
+    await this.queue.add('ingest', jobData);
   }
 }

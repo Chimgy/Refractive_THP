@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TelemetrySnapshot } from './entities/telemetry-snapshot.entity';
+import { RawTelemetrySnapshot } from './entities/raw-telemetry-snapshot.entity';
 
 @Injectable()
 export class TelemetrySnapshotsService {
   constructor(
-    @InjectRepository(TelemetrySnapshot)
-    private readonly snapshots: Repository<TelemetrySnapshot>,
+    @InjectRepository(RawTelemetrySnapshot)
+    private readonly snapshots: Repository<RawTelemetrySnapshot>,
   ) {}
 
   async capture(

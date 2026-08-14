@@ -29,7 +29,11 @@ export class ProjectsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateProjectDto,
   ) {
-    return this.projectsService.create(user.companyId, dto.name);
+    return this.projectsService.create(
+      user.companyId,
+      dto.name,
+      dto.allowedOrigins,
+    );
   }
 
   @Get()

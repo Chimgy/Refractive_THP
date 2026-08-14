@@ -13,7 +13,11 @@ export class ProjectsService {
     private readonly projectsRepository: Repository<Project>,
   ) {}
 
-  async create(companyId: string, name: string): Promise<Project> {
+  async create(
+    companyId: string,
+    name: string,
+    allowedOrigins: string[] = [],
+  ): Promise<Project> {
     const base = slugify(name);
     let slug = base;
     for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
@@ -24,7 +28,12 @@ export class ProjectsService {
       slug = `${base}-${randomSlugSuffix()}`;
     }
 
-    const project = this.projectsRepository.create({ companyId, name, slug });
+    const project = this.projectsRepository.create({
+      companyId,
+      name,
+      slug,
+      allowedOrigins,
+    });
     return this.projectsRepository.save(project);
   }
 

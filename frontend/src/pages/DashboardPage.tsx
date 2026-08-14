@@ -12,8 +12,8 @@ import {
 } from 'recharts';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as telemetryApi from '../api/telemetry';
-import { useAuth } from '../auth/AuthContext';
-import TopBar from '../components/TopBar';
+import SiteFooter from '../components/SiteFooter';
+import SiteHeader from '../components/SiteHeader';
 import {
   connections,
   deploymentSeries,
@@ -619,7 +619,7 @@ function PostDevTab() {
 function TelemetryTab({ projectId }: { projectId: string }) {
   // The only real (non-mock) stat on this tab so far — a live PFCOUNT over
   // the last 7 daily Redis HyperLogLog keys. Everything else here is still
-  // `mock.ts` (see external_data.md §5 roadmap step 8).
+  // `mock.ts` (see external_data.md section 5 roadmap step 8).
   const [uniques, setUniques] = useState<number | null>(null);
   const [uniquesFailed, setUniquesFailed] = useState(false);
 
@@ -946,7 +946,6 @@ function ConnectionsTab() {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
   const { projectId, tab: tabParam } = useParams<{
     projectId: string;
     tab: string;
@@ -955,16 +954,33 @@ export default function DashboardPage() {
   const activeProjectId = projectId ?? 'portal-api';
 
   return (
-    <div>
-      <TopBar
-        projectName={activeProjectId}
-        subtitle="thp/portal-api · eu-west-2 · thp.dev"
-        onHowItWorks={() => navigate('/how-it-works')}
-        onSignOut={() => {
-          void logout().then(() => navigate('/login'));
+    <div
+      style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
+    >
+      <SiteHeader
+        project={{
+          name: activeProjectId,
+          subtitle: 'thp/portal-api · eu-west-2 · thp.dev',
         }}
-        onProjects={() => navigate('/projects')}
-        onNewProject={() => navigate('/projects/new')}
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn"
+              style={{ height: 30 }}
+              onClick={() => navigate('/projects/new')}
+            >
+              + New project
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ height: 30 }}
+            >
+              Refresh
+            </button>
+          </>
+        }
       />
 
       <div className="tabs">
@@ -987,7 +1003,11 @@ export default function DashboardPage() {
       </div>
 
       <div
-        style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 316px' }}
+        style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1fr) 316px',
+        }}
       >
         <main style={{ padding: '22px 26px 30px' }}>
           {tab === 'dev' && <DevTab />}
@@ -1093,6 +1113,8 @@ export default function DashboardPage() {
           </div>
         </aside>
       </div>
+
+      <SiteFooter />
     </div>
   );
 }

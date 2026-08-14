@@ -1,30 +1,67 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sparkline from '../components/Sparkline';
-import { projects } from '../data/mock';
-import type { Project } from '../data/mock';
+import SiteFooter from '../components/SiteFooter';
+import SiteHeader from '../components/SiteHeader';
+import * as projectsApi from '../api/projects';
+import type { Project as MockProject } from '../data/mock';
 
 const filters = ['All', 'In development', 'Live', 'Needs connection'];
 const cols = '1.5fr 130px 118px 118px 150px 90px';
 
-const toneColor: Record<Project['trendTone'], string> = {
+const toneColor: Record<MockProject['trendTone'], string> = {
   good: 'var(--good)',
   bad: 'var(--bad)',
   warn: 'var(--warn)',
 };
 
-function stagePill(stage: Project['stage']) {
+function stagePill(stage: MockProject['stage']) {
   if (stage === 'live') return <span className="pill pill-live">LIVE</span>;
   if (stage === 'dev') return <span className="pill pill-dev">IN DEV</span>;
   return <span className="pill pill-partial">PARTIAL</span>;
+}
+
+// GitHub (dev-stage) and infra polling aren't wired up yet (project-plan.md
+// section 4/section 5) — only the telemetry domain has anything real behind it right now.
+// Every project from the real API renders as PARTIAL/TEL-only until those
+// land; deployFreq/leadTime/trend stay blank rather than fabricated.
+function toRow(p: projectsApi.Project): MockProject {
+  return {
+    id: p.id,
+    name: p.name,
+    repo: null,
+    stage: 'partial',
+    deployFreq: null,
+    leadTime: null,
+    sources: ['TEL'],
+    trend: [],
+    trendTone: 'warn',
+  };
 }
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
   const [query, setQuery] = useState('');
+  const [projects, setProjects] = useState<MockProject[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const rows = projects.filter((p) => {
+  useEffect(() => {
+    let cancelled = false;
+    projectsApi
+      .list()
+      .then((res) => {
+        if (!cancelled) setProjects(res.map(toRow));
+      })
+      .catch(() => {
+        if (!cancelled) setLoadFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows = (projects ?? []).filter((p) => {
     const matchesQuery =
       !query ||
       p.name.includes(query.toLowerCase()) ||
@@ -38,7 +75,11 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div>
+    <div
+      style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
+    >
+      <SiteHeader />
+
       <div
         style={{
           display: 'flex',
@@ -61,7 +102,9 @@ export default function ProjectsPage() {
               color: 'rgba(237,237,240,.45)',
             }}
           >
-            12 projects · 7 live · polled hourly
+            {projects === null
+              ? 'loading…'
+              : `${projects.length} project${projects.length === 1 ? '' : 's'}`}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -190,9 +233,15 @@ export default function ProjectsPage() {
             color: 'var(--muted)',
           }}
         >
-          No projects match that filter.
+          {loadFailed
+            ? 'Failed to load projects.'
+            : projects === null
+              ? 'Loading projects…'
+              : 'No projects match that filter.'}
         </div>
       ) : null}
+
+      <SiteFooter />
     </div>
   );
 }

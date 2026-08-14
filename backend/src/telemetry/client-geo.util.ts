@@ -6,7 +6,7 @@ import type { Request } from 'express';
 // code, "T1" for Tor exit nodes, "XX" when Cloudflare couldn't resolve one.
 // Cloudflare-specific: this is null for any request not passing through
 // Cloudflare's edge (local dev without the tunnel, or a future non-CF
-// front end — see project-plan.md §3, CloudFront has an equivalent header).
+// front end — see project-plan.md section 3, CloudFront has an equivalent header).
 export function getClientCountry(req: Request): string | null {
   return req.get('cf-ipcountry') || null;
 }

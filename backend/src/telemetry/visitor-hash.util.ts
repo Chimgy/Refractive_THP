@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 
-// Opaque per-visitor id for HyperLogLog (external_data.md §2 — HLL and this
+// Opaque per-visitor id for HyperLogLog (external_data.md section 2 — HLL and this
 // hash are one unit of work, HLL needs something opaque to add).
 // SHA256(ip + UA + daily-rotating-salt): the salt itself is
 // SHA256(secret + date), so the same IP+UA on the same day always collapses

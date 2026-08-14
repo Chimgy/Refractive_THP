@@ -18,7 +18,7 @@ async function bootstrap() {
   // `req.ip`/`req.ips` resolve to the address that edge appended to
   // X-Forwarded-For, not anything the client itself can set. Bump this to 2
   // if CloudFront ever ends up in front of the ALB too (project-plan.md
-  // §3). See client-ip.util.ts.
+  // section 3). See client-ip.util.ts.
   app.set('trust proxy', 1);
 
   // The embed beacon posts as text/plain (see telemetry-script.ts — this

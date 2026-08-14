@@ -1,0 +1,146 @@
+/* Restyles swagger-ui-react's default light chrome to sit inside the dark
+   portal theme. Deliberately light-touch — the spec content (tags,
+   operations, schemas) changes constantly, so this only retouches the
+   chrome (backgrounds, borders, type, inputs) and leaves per-verb colouring
+   and layout to the library. */
+
+.swagger-ui {
+  font-family: var(--sans);
+  color: var(--text);
+  background: transparent;
+}
+
+.swagger-ui .topbar {
+  display: none;
+}
+
+.swagger-ui .info .title,
+.swagger-ui .info li,
+.swagger-ui .info p,
+.swagger-ui .info table,
+.swagger-ui h1,
+.swagger-ui h2,
+.swagger-ui h3,
+.swagger-ui h4,
+.swagger-ui h5,
+.swagger-ui label,
+.swagger-ui .opblock-tag,
+.swagger-ui .opblock .opblock-summary-operation-id,
+.swagger-ui .opblock .opblock-summary-path,
+.swagger-ui .opblock .opblock-summary-path__deprecated,
+.swagger-ui .parameter__name,
+.swagger-ui .parameter__type,
+.swagger-ui table thead tr th,
+.swagger-ui .response-col_status,
+.swagger-ui .response-col_links,
+.swagger-ui .model-title,
+.swagger-ui .model,
+.swagger-ui .prop-type {
+  color: var(--text);
+}
+
+.swagger-ui .info .base-url,
+.swagger-ui .opblock-tag small,
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui .parameter__extension,
+.swagger-ui .parameter__in,
+.swagger-ui .response-col_description,
+.swagger-ui table.model tbody tr td,
+.swagger-ui .prop-format {
+  color: var(--muted);
+}
+
+.swagger-ui .scheme-container {
+  background: var(--panel-2);
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.swagger-ui .opblock-tag {
+  border-bottom: 1px solid var(--border);
+}
+.swagger-ui .opblock-tag:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.swagger-ui .opblock {
+  background: var(--panel);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+.swagger-ui .opblock .opblock-section-header {
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.swagger-ui section.models {
+  background: var(--panel);
+  border-color: var(--border-strong);
+}
+.swagger-ui section.models.is-open h4 {
+  border-bottom: 1px solid var(--border);
+}
+.swagger-ui .model-box {
+  background: var(--panel-2);
+}
+
+.swagger-ui table thead tr td,
+.swagger-ui table thead tr th {
+  border-bottom: 1px solid var(--border);
+}
+
+.swagger-ui input[type='text'],
+.swagger-ui input[type='email'],
+.swagger-ui input[type='password'],
+.swagger-ui input[type='search'],
+.swagger-ui textarea,
+.swagger-ui select {
+  background: #08080b;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+}
+
+.swagger-ui .btn {
+  border-radius: 6px;
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: transparent;
+}
+.swagger-ui .btn.execute {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.swagger-ui .btn.authorize {
+  color: var(--accent-text);
+  border-color: rgba(123, 92, 224, 0.4);
+}
+.swagger-ui .btn.authorize svg {
+  fill: var(--accent-text);
+}
+
+.swagger-ui .highlight-code,
+.swagger-ui .microlight,
+.swagger-ui .responses-inner pre {
+  background: #08080b !important;
+  color: var(--text);
+}
+
+.swagger-ui .tab li,
+.swagger-ui .opblock-description-wrapper p,
+.swagger-ui .opblock-external-docs-wrapper p,
+.swagger-ui .opblock-title_normal p {
+  color: var(--muted);
+}
+
+.swagger-ui .markdown code,
+.swagger-ui .renderedMarkdown code {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent-text);
+}
+
+.swagger-ui .loading-container .loading::after {
+  border-color: var(--accent) transparent transparent transparent;
+}

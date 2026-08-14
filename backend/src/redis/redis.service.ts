@@ -54,10 +54,59 @@ export class RedisService {
       .exec();
   }
 
+  // Same pipelined shape again, for the period-bucketed sample lists the
+  // metrics engine reads percentiles from (LCP/TTFB/dwell/session duration)
+  // — RPUSH + EXPIRE in one round trip.
+  async rpushWithExpire(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<void> {
+    await this.client
+      .pipeline()
+      .rpush(key, value)
+      .expire(key, ttlSeconds)
+      .exec();
+  }
+
+  // Plain scalar counter version of hincrbyWithExpire, for the
+  // period-bucketed keys that aren't a hash (e.g. a project's total session
+  // count for the period).
+  async incrbyWithExpire(
+    key: string,
+    amount: number,
+    ttlSeconds: number,
+  ): Promise<void> {
+    await this.client
+      .pipeline()
+      .incrby(key, amount)
+      .expire(key, ttlSeconds)
+      .exec();
+  }
+
   // PFCOUNT accepts multiple keys and returns the cardinality of their
   // union directly — no PFMERGE needed just to read a "last N days" figure
   // out of N daily HLL keys.
   pfcount(...keys: string[]): Promise<number> {
     return this.client.pfcount(...keys);
+  }
+
+  // Fixed-window rate limiting: INCR the window's counter, and set its
+  // expiry only if this is the first hit in the window (`EXPIRE ... NX`,
+  // Redis 7+) — using plain EXPIRE on every call would keep pushing the
+  // window out on every request from a sustained caller, so it would never
+  // actually reset. Returns the post-increment count for the caller to
+  // compare against its own limit.
+  async incrWithExpireNx(key: string, ttlSeconds: number): Promise<number> {
+    const results = await this.client
+      .pipeline()
+      .incr(key)
+      .expire(key, ttlSeconds, 'NX')
+      .exec();
+    const incrResult = results?.[0];
+    if (!incrResult) return 0;
+    const [err, count] = incrResult;
+    if (err) throw err;
+    return count as number;
   }
 }
