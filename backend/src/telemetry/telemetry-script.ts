@@ -5,7 +5,12 @@
 // as raw text regardless of declared content-type (see main.ts).
 export const THP_ANALYTICS_SCRIPT = `(function () {
   var script = document.currentScript;
-  var projectId = script && script.getAttribute('data-project-id');
+  // currentScript is null for module scripts / anything not executing
+  // synchronously as a classic script — bail instead of throwing into the
+  // embedding page's console. Only a plain, synchronous <script src> embed
+  // (as documented) is supported right now.
+  if (!script) return;
+  var projectId = script.getAttribute('data-project-id');
   var endpoint = new URL('/telemetry', script.src).toString();
 
   function utmParams() {

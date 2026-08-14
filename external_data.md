@@ -105,10 +105,10 @@ Other things patched together to get the proof of concept working, not yet addre
 
 ## 6. Roadmap (as agreed, this session)
 
-1. ~~Salted IP hashing + HyperLogLog unique visitors~~ — **done**, ahead of schedule (see §1 item 4).
-2. **Projects table** — real entity, tenant-owned, gives `projectId` somewhere to actually belong to. Also unblocks origin/referer allowlisting below, which currently has nowhere to store "which domain is project `abc123` allowed to post from."
-3. **Rewrite `THP_analytics.js`** to add the outstanding metrics from §5.
-4. **Error fingerprinting + dedup table** — Postgres `INSERT ... ON CONFLICT (project_id, fingerprint) DO UPDATE SET count = count + 1` pattern (matches how Sentry groups errors). Fingerprint on `message + file + line(+col)`, deliberately *not* full stack traces — those get noisy across minified builds since chunk hashes shift between deploys, splitting one real bug into multiple fingerprints.
+1.**done** ~~Salted IP hashing + HyperLogLog unique visitors~~ — **done**, ahead of schedule (see §1 item 4).
+2. **done** **Projects table** — real entity, tenant-owned, gives `projectId` somewhere to actually belong to. Also unblocks origin/referer allowlisting below, which currently has nowhere to store "which domain is project `abc123` allowed to post from."
+3.**done**  **Rewrite `THP_analytics.js`** to add the outstanding metrics from §5.
+4.**done**  **Error fingerprinting + dedup table** — Postgres `INSERT ... ON CONFLICT (project_id, fingerprint) DO UPDATE SET count = count + 1` pattern (matches how Sentry groups errors). Fingerprint on `message + file + line(+col)`, deliberately *not* full stack traces — those get noisy across minified builds since chunk hashes shift between deploys, splitting one real bug into multiple fingerprints.
 
 **Stretch, after all of the above:**
 

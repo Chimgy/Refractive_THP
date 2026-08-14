@@ -1,12 +1,15 @@
 import type { Request } from 'express';
 
-// Prefer the header Cloudflare's edge sets from the actual TCP connection it
-// terminated (`CF-Connecting-IP`) — not spoofable by the client, since
-// Cloudflare overwrites it on the way in, same trust reasoning as
-// `CF-IPCountry` elsewhere in this doc. Deliberately no `X-Forwarded-For`
-// fallback: its value/order is client-controllable unless Express's
-// `trust proxy` is set to strip untrusted hops, which it isn't here. Falls
-// back to the raw socket peer for local dev without the tunnel in front.
+// `req.ip` — Express's own X-Forwarded-For resolution, hop-aware via
+// `app.set('trust proxy', 1)` in main.ts. With exactly one trusted reverse
+// proxy in front (Cloudflare's edge, whether via Tunnel or classic proxied
+// DNS), this resolves to the address that edge appended, not anything the
+// client itself can set — same trust reasoning as `CF-IPCountry` in
+// client-geo.util.ts, but via a standard header instead of a
+// Cloudflare-specific one, so it keeps working unmodified if this ever
+// moves behind CloudFront+ALB instead (bump the trust-proxy hop count to
+// 2 at that point). Falls back to the raw socket peer for local dev
+// without any proxy in front.
 export function getClientIp(req: Request): string {
-  return req.get('cf-connecting-ip') ?? req.socket.remoteAddress ?? 'unknown';
+  return req.ip ?? req.socket.remoteAddress ?? 'unknown';
 }

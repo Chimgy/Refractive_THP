@@ -1,14 +1,25 @@
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import type { CorsOptionsCallback } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import type { Request } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.use(cookieParser());
+
+  // Exactly one reverse proxy sits between the browser and this app right
+  // now (Cloudflare's edge, whether via Tunnel or classic proxied DNS) — so
+  // `req.ip`/`req.ips` resolve to the address that edge appended to
+  // X-Forwarded-For, not anything the client itself can set. Bump this to 2
+  // if CloudFront ever ends up in front of the ALB too (project-plan.md
+  // §3). See client-ip.util.ts.
+  app.set('trust proxy', 1);
 
   // The embed beacon posts as text/plain (see telemetry-script.ts — this
   // sidesteps CORS preflight entirely, since arbitrary third-party sites
@@ -17,11 +28,26 @@ async function bootstrap() {
   app.use('/telemetry', express.text({ type: '*/*', limit: '64kb' }));
 
   const configService = app.get(ConfigService);
-  app.enableCors({
-    origin: configService
-      .get<string>('CORS_ORIGIN', 'http://localhost:5173')
-      .split(','),
-    credentials: true,
+  const corsOrigins = configService
+    .get<string>('CORS_ORIGIN', 'http://localhost:5173')
+    .split(',');
+
+  // Telemetry's two routes (GET /THP_analytics.js, POST /telemetry) are
+  // deliberately excluded here — they're public-by-design (no session, no
+  // credentials ever sent) and set their own Access-Control-Allow-Origin: *
+  // on the controller. Letting the global `credentials: true` config also
+  // apply to them would additionally stamp Access-Control-Allow-Credentials:
+  // true on every response regardless of origin match — a spec-invalid
+  // combination alongside `*`. Returning `{}` for those paths makes the
+  // `cors` package skip adding any CORS headers at all, leaving the
+  // controller's own header as the sole source of truth.
+  app.enableCors((req: Request, callback: CorsOptionsCallback) => {
+    const isTelemetryRoute =
+      req.path === '/telemetry' || req.path === '/THP_analytics.js';
+    callback(
+      null,
+      isTelemetryRoute ? {} : { origin: corsOrigins, credentials: true },
+    );
   });
 
   // Telemetry routes are excluded from `api` — they're embedded in

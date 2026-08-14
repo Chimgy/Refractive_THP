@@ -55,6 +55,7 @@ services:
       CORS_ORIGIN: http://localhost:5173
       REFRESH_TOKEN_COOKIE_NAME: thp_refresh_token
       COOKIE_DOMAIN: ''
+      TELEMETRY_HASH_SECRET: ${TELEMETRY_HASH_SECRET}
     ports:
       - '3000:3000'
     volumes:
