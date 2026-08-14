@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LiveAuthGuard } from '../auth/guards/live-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user.type';
+import { TelemetryMetricsQueryService } from '../telemetry/telemetry-metrics-query.service';
 import { TelemetryUniquesService } from '../telemetry/telemetry-uniques.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ProjectsService } from './projects.service';
@@ -22,6 +23,7 @@ export class ProjectsController {
   constructor(
     private readonly projectsService: ProjectsService,
     private readonly uniquesService: TelemetryUniquesService,
+    private readonly metricsQueryService: TelemetryMetricsQueryService,
   ) {}
 
   @Post()
@@ -65,5 +67,21 @@ export class ProjectsController {
       days,
     );
     return { projectId, days, uniqueVisitors };
+  }
+
+  // Unlike uniqueVisitors above, this reads the tenant-scoped
+  // telemetry_metrics table directly (not an opaque Redis bucket), so it's
+  // worth the ownership check — findByIdForCompany 404s a projectId that
+  // exists but belongs to a different company, same guarantee `get()` above
+  // already gives every other project-scoped read.
+  @Get(':projectId/telemetry/summary')
+  async telemetrySummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('projectId') projectId: string,
+    @Query('days') daysParam?: string,
+  ) {
+    await this.projectsService.findByIdForCompany(projectId, user.companyId);
+    const days = Math.min(30, Math.max(1, Number(daysParam) || 7));
+    return this.metricsQueryService.getSummary(projectId, days);
   }
 }

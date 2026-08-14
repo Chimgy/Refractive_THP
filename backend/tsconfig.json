@@ -21,5 +21,16 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
+  },
+  // Docker Desktop on Windows doesn't reliably forward inotify events across
+  // the bind mount (docker-compose.yml's `./backend:/app`), so tsc's default
+  // watch mode can silently stop seeing host-side file changes — `nest start
+  // --watch` looked alive but hadn't recompiled in over an hour. Polling
+  // instead of relying on filesystem events fixes that at the cost of a
+  // small, fixed CPU overhead.
+  "watchOptions": {
+    "watchFile": "priorityPollingInterval",
+    "watchDirectory": "dynamicPriorityPolling",
+    "fallbackPolling": "dynamicPriority"
   }
 }

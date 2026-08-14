@@ -219,7 +219,29 @@ Currently embedded on the user's real live site (`ramonlyvpn.net`, Astro + React
 
 ---
 
-## 12. Roadmap status
+## 12. Bugs found in production data (post-launch)
+
+Found by actually reading real `telemetry_metrics` rows after browsing the live site — not caught by testing, since the smoke tests that verified the rollup end-to-end (section 6) used short-lived synthetic sessions that never exercised the failure mode below.
+
+### Abandoned-tab session duration distortion
+
+**Symptom:** `sessionDurationAvgMs` in several consecutive period rows showed 9,413,264 / 10,687,860 / 12,079,125 — i.e. multi-*hour* "average session durations," climbing steadily period over period. A separate row also showed `lcpP75`/`ttfbP75` both around 5,893,000 (~98 minutes), nearly identical to each other, while the same row's p50s were completely normal (608ms / 422ms).
+
+**Root cause:** `session_end`'s `durationMs` was computed client-side as `Date.now() - startedAt` — raw wall-clock time since the tab first opened, with no correction for the tab being backgrounded or idle. A tab left open in the background re-fires `session_end` on every `visibilitychange → hidden` (a long-documented quirk, section 1) with an ever-growing `durationMs`, since `startedAt` never resets. The rollup only deduplicates same-session fires *within one 5-minute period* (max-per-session), not *across* periods, so a single long-lived background tab showed up as a "new," larger duration in every period it happened to touch — explaining the steady climb across consecutive rows. The LCP/TTFB spike is the same phenomenon from a different angle: `PerformanceObserver`'s LCP candidate keeps updating for as long as the page is open, so a long-backgrounded tab can report an LCP timestamp far larger than any real paint time; TTFB doesn't have a legitimate reason to grow like that at all, which points at the same root cause (a long-suspended/backgrounded tab producing unreliable timing values generally), not two unrelated bugs.
+
+**First fix (shipped, then recognized as incomplete): reject-if-too-large.** Added sanity ceilings (`MAX_SESSION_DURATION_MS` = 60min, `MAX_LCP_MS`/`MAX_TTFB_MS` = 60s, `MAX_DWELL_SAMPLE_MS` = 30min) in `TelemetryAggregationService` — any sample past the ceiling is excluded from aggregation entirely (not clamped to the ceiling value — a fabricated-but-bounded number is still a fabrication; the honest move for an unmeasurable abandoned tab is to exclude the sample, not invent a plausible replacement). This stopped the most extreme cases but was only treating the symptom: a tab backgrounded for, say, 45 minutes would still report a "45-minute session" that's just as wrong as the multi-hour ones, just not extreme enough to hit the ceiling.
+
+**Real fix: stop measuring wall-clock time.** `dwell` already solves this exact problem correctly — it's a start/pause/resume state machine that stops accumulating on `hidden` and after 30s of no interaction, so it only ever counts genuinely active time. `telemetry-script.ts` now tracks `totalDwellMs`, a cumulative-and-never-reset running total (distinct from `dwellMs`, the per-flush chunk that *does* reset), and sends it as `activeMs` alongside the original `durationMs` on `session_end`. `TelemetryAggregationService` now prefers `activeMs` when present, falling back to `durationMs` only for tabs still running a browser-cached copy of the pre-fix script. A genuinely abandoned tab now contributes near-zero to the aggregate regardless of how long it sat open, because active time never accrued in the first place — the ceiling becomes a rare safety net instead of the primary correctness mechanism.
+
+**Verified:** a synthetic session with `durationMs: 10800000` (3 hours) and `activeMs: 95000` (95s) correctly aggregated as `95000`, not rejected and not the inflated wall-clock figure.
+
+**Cleanup:** the already-distorted historical rows were retroactively corrected — `sessionDurationAvgMs`/`sessionDurationP50`/`lcpP75`/`ttfbP75` nulled (not guessed at) wherever they exceeded the new ceilings, via a one-off `UPDATE`, same precedent as every other one-off SQL fix in this project (section 11).
+
+**Lesson for next time:** the smoke test that verified the rollup (section 6) only used short-lived synthetic sessions — it never exercised "tab stays open a long time," which is extremely common real user behavior, not a corner case. Worth remembering when testing anything else that derives a metric from elapsed wall-clock time.
+
+---
+
+## 13. Roadmap status
 
 1. **done** — Salted IP hashing + HyperLogLog unique visitors.
 2. **done** — Projects table.

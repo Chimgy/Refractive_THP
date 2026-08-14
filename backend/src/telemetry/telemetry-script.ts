@@ -122,6 +122,15 @@ export const THP_ANALYTICS_SCRIPT = `(function () {
   // mouse/key/scroll/click activity, so a backgrounded or AFK tab doesn't
   // inflate "time on page".
   var dwellMs = 0;
+  // Cumulative, never reset for the life of the tab — unlike dwellMs, which
+  // is the per-flush chunk. This is what session_end reports as active time
+  // instead of raw wall-clock duration: wall-clock counts every minute a
+  // tab sat backgrounded or idle, which is exactly the "abandoned tab"
+  // problem that inflated sessionDurationAvgMs in real data (a tab left
+  // open for hours reported as an hours-long "session"). Active time only
+  // grows while dwellActive, so an abandoned tab naturally contributes
+  // ~nothing here regardless of how long it sat open.
+  var totalDwellMs = 0;
   var dwellActive = true;
   var lastTick = Date.now();
   var idleTimer;
@@ -149,6 +158,7 @@ export const THP_ANALYTICS_SCRIPT = `(function () {
   function flushDwell() {
     tickDwell();
     if (dwellMs > 0) {
+      totalDwellMs += dwellMs;
       track('dwell', { ms: dwellMs });
       dwellMs = 0;
     }
@@ -192,7 +202,13 @@ export const THP_ANALYTICS_SCRIPT = `(function () {
       pauseDwell();
       flushDwell();
       flushVitals();
-      track('session_end', { durationMs: Date.now() - Number(startedAt) });
+      // durationMs kept for reference (raw wall-clock, since tab open);
+      // activeMs — cumulative dwell — is what the server actually uses for
+      // "session duration" now. See totalDwellMs above.
+      track('session_end', {
+        durationMs: Date.now() - Number(startedAt),
+        activeMs: totalDwellMs,
+      });
       flush();
     } else {
       resumeDwell();

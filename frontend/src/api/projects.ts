@@ -13,3 +13,7 @@ export type Project = {
 export function list(): Promise<Project[]> {
   return request<Project[]>('/tenant/projects');
 }
+
+export function get(id: string): Promise<Project> {
+  return request<Project>(`/tenant/projects/${encodeURIComponent(id)}`);
+}

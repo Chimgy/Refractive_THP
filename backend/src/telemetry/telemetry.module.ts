@@ -17,6 +17,7 @@ import { TelemetryRateLimitService } from './telemetry-rate-limit.service';
 import { TelemetrySnapshotPartitionService } from './telemetry-snapshot-partition.service';
 import { TelemetryController } from './telemetry.controller';
 import { TelemetryErrorsService } from './telemetry-errors.service';
+import { TelemetryMetricsQueryService } from './telemetry-metrics-query.service';
 import { TelemetrySnapshotsService } from './telemetry-snapshots.service';
 import { TelemetryUniquesService } from './telemetry-uniques.service';
 
@@ -66,6 +67,7 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TelemetryAggregationService,
     TelemetryUniquesService,
     TelemetryErrorsService,
+    TelemetryMetricsQueryService,
     TelemetryOriginGuardService,
     TelemetryRateLimitService,
     TelemetrySnapshotPartitionService,
@@ -73,6 +75,6 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TelemetryRollupProcessor,
     TelemetryMaintenanceProcessor,
   ],
-  exports: [TelemetryUniquesService],
+  exports: [TelemetryUniquesService, TelemetryMetricsQueryService],
 })
 export class TelemetryModule {}

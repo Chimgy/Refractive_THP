@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useNavigate, useParams } from 'react-router-dom';
+import * as projectsApi from '../api/projects';
 import * as telemetryApi from '../api/telemetry';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
@@ -22,9 +23,6 @@ import {
   leadTimeBuckets,
   leadTimeSeries,
   pollActivity,
-  taggedClicks,
-  topPages,
-  trafficSeries,
   utilisation,
 } from '../data/mock';
 
@@ -616,17 +614,57 @@ function PostDevTab() {
   );
 }
 
+// n >= 1000 -> "31.4" + "k", otherwise a plain integer string with no unit.
+function splitCompact(n: number): { value: string; unit?: string } {
+  if (n >= 1000) return { value: (n / 1000).toFixed(1), unit: 'k' };
+  return { value: n.toLocaleString() };
+}
+
+function formatDuration(ms: number | null): string {
+  if (ms === null) return '—';
+  const totalSeconds = Math.round(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function pctDeltaProps(
+  pct: number | null,
+  suffix: string,
+): { delta?: string; deltaTone: 'good' | 'bad' | 'muted' } {
+  if (pct === null) return { delta: suffix, deltaTone: 'muted' };
+  const arrow = pct >= 0 ? '▲' : '▼';
+  return {
+    delta: `${arrow} ${Math.abs(pct).toFixed(1)}% ${suffix}`,
+    deltaTone: pct >= 0 ? 'good' : 'bad',
+  };
+}
+
+function msDeltaProps(deltaMs: number | null, suffix: string) {
+  if (deltaMs === null) return { delta: suffix, deltaTone: 'muted' as const };
+  const arrow = deltaMs >= 0 ? '▲' : '▼';
+  const seconds = Math.round(Math.abs(deltaMs) / 1000);
+  return {
+    delta: `${arrow} ${seconds}s ${suffix}`,
+    deltaTone: (deltaMs >= 0 ? 'good' : 'bad') as 'good' | 'bad',
+  };
+}
+
 function TelemetryTab({ projectId }: { projectId: string }) {
-  // The only real (non-mock) stat on this tab so far — a live PFCOUNT over
-  // the last 7 daily Redis HyperLogLog keys. Everything else here is still
-  // `mock.ts` (see external_data.md section 5 roadmap step 8).
   const [uniques, setUniques] = useState<number | null>(null);
   const [uniquesFailed, setUniquesFailed] = useState(false);
+  const [summary, setSummary] = useState<telemetryApi.TelemetrySummary | null>(
+    null,
+  );
+  const [summaryFailed, setSummaryFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setUniques(null);
     setUniquesFailed(false);
+    setSummary(null);
+    setSummaryFailed(false);
+
     telemetryApi
       .uniqueVisitors(projectId, 7)
       .then((res) => {
@@ -635,20 +673,37 @@ function TelemetryTab({ projectId }: { projectId: string }) {
       .catch(() => {
         if (!cancelled) setUniquesFailed(true);
       });
+
+    telemetryApi
+      .summary(projectId, 7)
+      .then((res) => {
+        if (!cancelled) setSummary(res);
+      })
+      .catch(() => {
+        if (!cancelled) setSummaryFailed(true);
+      });
+
     return () => {
       cancelled = true;
     };
   }, [projectId]);
+
+  const pageViewsStat = summary ? splitCompact(summary.pageViews) : null;
+  const maxTaggedClick = Math.max(
+    1,
+    ...(summary?.taggedClicks.map((c) => c.count) ?? [1]),
+  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="stat-strip">
         <Stat
           label="Page views 7d"
-          value="31.4"
-          unit="k"
-          delta="▲ 12% vs prev 7d"
-          deltaTone="good"
+          value={pageViewsStat ? pageViewsStat.value : '—'}
+          unit={pageViewsStat?.unit}
+          {...(summaryFailed
+            ? { delta: 'failed to load', deltaTone: 'bad' as const }
+            : pctDeltaProps(summary?.pageViewsDeltaPct ?? null, 'vs prev 7d'))}
         />
         <Stat
           label="Unique visitors 7d"
@@ -658,11 +713,17 @@ function TelemetryTab({ projectId }: { projectId: string }) {
         />
         <Stat
           label="Avg session"
-          value="01:48"
-          delta="▼ 11s vs prev 7d"
-          deltaTone="bad"
+          value={formatDuration(summary?.avgSessionMs ?? null)}
+          {...(summaryFailed
+            ? { delta: 'failed to load', deltaTone: 'bad' as const }
+            : msDeltaProps(summary?.avgSessionDeltaMs ?? null, 'vs prev 7d'))}
         />
-        <Stat label="Events 24h" value="2,904" delta="batched ingest" />
+        <Stat
+          label="Events 24h"
+          value={summary ? summary.events24h.toLocaleString() : '—'}
+          delta={summaryFailed ? 'failed to load' : 'batched ingest'}
+          deltaTone={summaryFailed ? 'bad' : 'muted'}
+        />
       </div>
 
       <Card
@@ -676,7 +737,7 @@ function TelemetryTab({ projectId }: { projectId: string }) {
         <div style={{ height: 200, marginTop: 18 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={trafficSeries}
+              data={summary?.series ?? []}
               margin={{ top: 4, right: 4, bottom: 0, left: -8 }}
             >
               <CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} />
@@ -716,17 +777,16 @@ function TelemetryTab({ projectId }: { projectId: string }) {
           </div>
           <div
             className="thead"
-            style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px' }}
+            style={{ display: 'grid', gridTemplateColumns: '1fr 100px' }}
           >
             <span>PATH</span>
             <span>VIEWS</span>
-            <span>AVG TIME</span>
           </div>
-          {topPages.map((p) => (
+          {(summary?.topPages ?? []).map((p) => (
             <div
               key={p.path}
               className="tr"
-              style={{ gridTemplateColumns: '1fr 100px 100px' }}
+              style={{ gridTemplateColumns: '1fr 100px' }}
             >
               <span
                 className="mono"
@@ -740,14 +800,19 @@ function TelemetryTab({ projectId }: { projectId: string }) {
               >
                 {p.views.toLocaleString()}
               </span>
-              <span
-                className="mono"
-                style={{ fontSize: 12, color: 'var(--muted)' }}
-              >
-                {p.avg}
-              </span>
             </div>
           ))}
+          {summary && summary.topPages.length === 0 ? (
+            <div
+              style={{
+                padding: '16px 20px',
+                font: '400 12px var(--sans)',
+                color: 'var(--muted)',
+              }}
+            >
+              No page views recorded yet.
+            </div>
+          ) : null}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -767,7 +832,7 @@ function TelemetryTab({ projectId }: { projectId: string }) {
                 marginTop: 18,
               }}
             >
-              {taggedClicks.map((c) => (
+              {(summary?.taggedClicks ?? []).map((c) => (
                 <div
                   key={c.tag}
                   style={{
@@ -794,7 +859,7 @@ function TelemetryTab({ projectId }: { projectId: string }) {
                     >
                       <div
                         style={{
-                          width: `${(c.count / 812) * 100}%`,
+                          width: `${(c.count / maxTaggedClick) * 100}%`,
                           height: 6,
                           borderRadius: 3,
                           background: 'var(--accent)',
@@ -814,6 +879,14 @@ function TelemetryTab({ projectId }: { projectId: string }) {
                   </span>
                 </div>
               ))}
+              {summary && summary.taggedClicks.length === 0 ? (
+                <div
+                  className="mono faint"
+                  style={{ fontSize: 11, marginTop: 4 }}
+                >
+                  No data-thp-track clicks recorded yet.
+                </div>
+              ) : null}
             </div>
           </Card>
 
@@ -834,7 +907,7 @@ function TelemetryTab({ projectId }: { projectId: string }) {
               }}
             >
               {
-                '<script src="https://thp.dev/THP_analytics.js" data-project-id="abc123"></script>'
+                `<script src="https://thp.dev/THP_analytics.js" data-project-id="${projectId}"></script>`
               }
             </div>
           </Card>
@@ -953,14 +1026,35 @@ export default function DashboardPage() {
   const tab = tabs.some((t) => t.id === tabParam) ? (tabParam as Tab) : 'dev';
   const activeProjectId = projectId ?? 'portal-api';
 
+  const [project, setProject] = useState<projectsApi.Project | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProject(null);
+    projectsApi
+      .get(activeProjectId)
+      .then((res) => {
+        if (!cancelled) setProject(res);
+      })
+      .catch(() => {
+        // Header falls back to the raw id below — no need for a distinct
+        // error state here, this bar is cosmetic.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeProjectId]);
+
   return (
     <div
       style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}
     >
       <SiteHeader
         project={{
-          name: activeProjectId,
-          subtitle: 'thp/portal-api · eu-west-2 · thp.dev',
+          name: project?.name ?? activeProjectId,
+          subtitle: project
+            ? (project.allowedOrigins[0] ?? 'no origin configured')
+            : 'loading…',
         }}
         actions={
           <>

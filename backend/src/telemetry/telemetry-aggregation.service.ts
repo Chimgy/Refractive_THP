@@ -16,6 +16,21 @@ import {
   utmSourceKey,
 } from './telemetry-aggregation-keys.util';
 
+// Sanity ceilings for client-reported durations — confirmed necessary
+// against real data: a backgrounded browser tab left open for hours keeps
+// re-firing session_end (durationMs = Date.now() - startedAt, never reset)
+// and can report wildly inflated LCP (PerformanceObserver keeps updating
+// until the page hides). One such sample was enough to drag a whole
+// period's lcpP75/ttfbP75 into the millions of ms. Rejected outright rather
+// than clamped to the ceiling — a fabricated-but-bounded number is still a
+// fabrication; an abandoned tab isn't a real (or measurable) engaged
+// session, so the honest move is to exclude the sample, not invent a
+// plausible-looking replacement for it.
+const MAX_LCP_MS = 60_000;
+const MAX_TTFB_MS = 60_000;
+const MAX_DWELL_SAMPLE_MS = 30 * 60_000;
+const MAX_SESSION_DURATION_MS = 60 * 60_000;
+
 // Replaces the old daily-bucketed TelemetryCountersService — writes go into
 // short-lived 5-minute-period keys instead, consumed and discarded by
 // TelemetryRollupProcessor rather than read directly. Bucketed by
@@ -68,31 +83,50 @@ export class TelemetryAggregationService {
         if (typeof e.utm_source === 'string') {
           bump(utmSourceKey(meta.projectId, period), e.utm_source);
         }
-      } else if (
-        type === 'session_end' &&
-        typeof e.durationMs === 'number' &&
-        sessionId
-      ) {
-        // Raw fires, duplicates and all (external_data.md section 1) — max
-        // per session is taken at rollup, not here.
-        listPushes.push({
-          key: sessionDurationKey(meta.projectId, period),
-          value: `${sessionId}:${e.durationMs}`,
-        });
+      } else if (type === 'session_end' && sessionId) {
+        // Prefer activeMs (cumulative dwell — excludes hidden/idle time,
+        // see telemetry-script.ts) over raw wall-clock durationMs. This is
+        // the actual fix for the abandoned-tab distortion, not just the
+        // ceiling below: a backgrounded tab left open for hours reports
+        // ~0 activeMs regardless of how long it sat open, so it no longer
+        // needs rejecting in the first place. durationMs is a fallback only
+        // for tabs still running a pre-activeMs copy of the script (cached
+        // in the browser from before this shipped).
+        const value =
+          typeof e.activeMs === 'number'
+            ? e.activeMs
+            : typeof e.durationMs === 'number'
+              ? e.durationMs
+              : null;
+        // Ceiling kept as defense-in-depth even for activeMs — cheap
+        // insurance against clock weirdness or a future signal that isn't
+        // as well-behaved as dwell turned out to be. Raw fires, duplicates
+        // and all (external_data.md section 1) — max per session is taken
+        // at rollup, not here.
+        if (value !== null && value <= MAX_SESSION_DURATION_MS) {
+          listPushes.push({
+            key: sessionDurationKey(meta.projectId, period),
+            value: `${sessionId}:${value}`,
+          });
+        }
       } else if (type === 'vitals') {
-        if (typeof e.lcp === 'number') {
+        if (typeof e.lcp === 'number' && e.lcp <= MAX_LCP_MS) {
           listPushes.push({
             key: lcpKey(meta.projectId, period),
             value: String(e.lcp),
           });
         }
-        if (typeof e.ttfb === 'number') {
+        if (typeof e.ttfb === 'number' && e.ttfb <= MAX_TTFB_MS) {
           listPushes.push({
             key: ttfbKey(meta.projectId, period),
             value: String(e.ttfb),
           });
         }
-      } else if (type === 'dwell' && typeof e.ms === 'number') {
+      } else if (
+        type === 'dwell' &&
+        typeof e.ms === 'number' &&
+        e.ms <= MAX_DWELL_SAMPLE_MS
+      ) {
         listPushes.push({
           key: dwellKey(meta.projectId, period),
           value: String(e.ms),
