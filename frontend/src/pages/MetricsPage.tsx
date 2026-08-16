@@ -132,7 +132,10 @@ function MetricRow({
   );
 }
 
-function VisualHead({
+// Exported for DashboardPage.tsx's LCP/TTFB widgets, which reuse this exact
+// visual language rather than re-implementing it — same reasoning as
+// BigStat/BarRow below.
+export function VisualHead({
   label,
   tag,
   tagTone,
@@ -162,7 +165,7 @@ function VisualHead({
   );
 }
 
-function BigStat({
+export function BigStat({
   value,
   unit,
   delta,
@@ -198,7 +201,7 @@ function BigStat({
   );
 }
 
-function BarRow({
+export function BarRow({
   label,
   pct,
   value,

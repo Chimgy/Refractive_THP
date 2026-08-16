@@ -2,15 +2,20 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from '../projects/entities/project.entity';
+import { CloudflareZoneLink } from './entities/cloudflare-zone-link.entity';
+import { EdgeLogMetric } from './entities/edgelog-metric.entity';
 import { RawTelemetrySnapshot } from './entities/raw-telemetry-snapshot.entity';
 import { TelemetryErrorFingerprint } from './entities/telemetry-error-fingerprint.entity';
-import { TelemetryMetric } from './entities/telemetry-metric.entity';
+import { SdkTelemetryMetric } from './entities/sdk-telemetry-metric.entity';
 import { TELEMETRY_INGEST_QUEUE } from './telemetry-ingest.queue';
 import { TelemetryIngestProcessor } from './telemetry-ingest.processor';
 import { TELEMETRY_MAINTENANCE_QUEUE } from './telemetry-maintenance.queue';
 import { TelemetryMaintenanceProcessor } from './telemetry-maintenance.processor';
 import { TELEMETRY_ROLLUP_QUEUE } from './telemetry-rollup.queue';
 import { TelemetryRollupProcessor } from './telemetry-rollup.processor';
+import { TELEMETRY_CLOUDFLARE_PULL_QUEUE } from './telemetry-cloudflare-pull.queue';
+import { TelemetryCloudflarePullProcessor } from './telemetry-cloudflare-pull.processor';
+import { CloudflareZoneLinkService } from './cloudflare-zone-link.service';
 import { TelemetryAggregationService } from './telemetry-aggregation.service';
 import { TelemetryOriginGuardService } from './telemetry-origin-guard.service';
 import { TelemetryRateLimitService } from './telemetry-rate-limit.service';
@@ -26,7 +31,9 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TypeOrmModule.forFeature([
       RawTelemetrySnapshot,
       TelemetryErrorFingerprint,
-      TelemetryMetric,
+      SdkTelemetryMetric,
+      EdgeLogMetric,
+      CloudflareZoneLink,
       // Only for TelemetryOriginGuardService's and TelemetryRollupProcessor's
       // own repository lookups — this module does NOT import ProjectsModule
       // (which imports TelemetryModule for TelemetryUniquesService;
@@ -60,6 +67,18 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
         removeOnFail: { age: 7 * 24 * 3600 },
       },
     }),
+    // Cloudflare GraphQL Analytics pull (edgelog-metric.entity.ts) — same
+    // 5-minute cadence as the rollup queue above, kept as its own queue
+    // rather than piggybacking on TELEMETRY_ROLLUP_QUEUE since it's a
+    // completely separate data source/failure domain (an external API call,
+    // not a Redis read).
+    BullModule.registerQueue({
+      name: TELEMETRY_CLOUDFLARE_PULL_QUEUE,
+      defaultJobOptions: {
+        removeOnComplete: { age: 3600 },
+        removeOnFail: { age: 24 * 3600 },
+      },
+    }),
   ],
   controllers: [TelemetryController],
   providers: [
@@ -74,7 +93,13 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TelemetryIngestProcessor,
     TelemetryRollupProcessor,
     TelemetryMaintenanceProcessor,
+    CloudflareZoneLinkService,
+    TelemetryCloudflarePullProcessor,
   ],
-  exports: [TelemetryUniquesService, TelemetryMetricsQueryService],
+  exports: [
+    TelemetryUniquesService,
+    TelemetryMetricsQueryService,
+    CloudflareZoneLinkService,
+  ],
 })
 export class TelemetryModule {}

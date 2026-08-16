@@ -56,6 +56,7 @@ services:
       REFRESH_TOKEN_COOKIE_NAME: thp_refresh_token
       COOKIE_DOMAIN: ''
       TELEMETRY_HASH_SECRET: ${TELEMETRY_HASH_SECRET}
+      CLOUDFLARE_TOKEN_ENC_KEY: ${CLOUDFLARE_TOKEN_ENC_KEY}
     ports:
       - '3000:3000'
     volumes:

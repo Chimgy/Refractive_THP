@@ -15,8 +15,10 @@ import * as projectsApi from '../api/projects';
 import * as telemetryApi from '../api/telemetry';
 import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
+import WorldMap, { countryName } from '../components/WorldMap';
+import { BarRow, BigStat, VisualHead } from './MetricsPage';
 import {
-  connections,
+  connections as mockConnections,
   deploymentSeries,
   errorBudget,
   latencySeries,
@@ -25,6 +27,8 @@ import {
   pollActivity,
   utilisation,
 } from '../data/mock';
+
+type ConnectionEntry = { name: string; status: 'CONNECTED' | 'CONNECT' };
 
 type Tab = 'dev' | 'post' | 'telemetry' | 'connections';
 
@@ -650,7 +654,91 @@ function msDeltaProps(deltaMs: number | null, suffix: string) {
   };
 }
 
-function TelemetryTab({ projectId }: { projectId: string }) {
+// Label + proportional bar + trailing value — the same row shape this file
+// already hand-rolls once for tagged clicks; factored out so the new geo/
+// device/scroll/UTM lists below don't each re-duplicate it.
+function MiniBar({
+  label,
+  pct,
+  value,
+}: {
+  label: string;
+  pct: number;
+  value: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 46px',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <div>
+        <div className="mono" style={{ fontSize: 11.5, color: 'rgba(237,237,240,.7)' }}>
+          {label}
+        </div>
+        <div
+          style={{
+            height: 6,
+            borderRadius: 3,
+            background: 'rgba(255,255,255,.06)',
+            marginTop: 6,
+          }}
+        >
+          <div
+            style={{
+              width: `${Math.max(0, Math.min(100, pct))}%`,
+              height: 6,
+              borderRadius: 3,
+              background: 'var(--accent)',
+            }}
+          />
+        </div>
+      </div>
+      <span
+        className="mono"
+        style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right' }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// Top N entries by count, sharing the remainder into a synthetic "other" row
+// rather than dropping it silently — used for any breakdown that can have
+// more distinct keys than are worth listing (countries, UTM sources).
+function rankedShares(
+  entries: telemetryApi.TelemetryBreakdownEntry[],
+  limit: number,
+): { key: string; count: number; pct: number }[] {
+  const total = entries.reduce((sum, e) => sum + e.count, 0);
+  if (total === 0) return [];
+  const sorted = [...entries].sort((a, b) => b.count - a.count);
+  const top = sorted.slice(0, limit);
+  const restCount = sorted.slice(limit).reduce((sum, e) => sum + e.count, 0);
+  const rows = top.map((e) => ({
+    key: e.key,
+    count: e.count,
+    pct: (e.count / total) * 100,
+  }));
+  if (restCount > 0) {
+    rows.push({ key: 'other', count: restCount, pct: (restCount / total) * 100 });
+  }
+  return rows;
+}
+
+const DEVICE_ORDER = ['mobile', 'desktop', 'tablet'];
+
+function TelemetryTab({
+  projectId,
+  refreshNonce,
+}: {
+  projectId: string;
+  refreshNonce: number;
+}) {
   const [uniques, setUniques] = useState<number | null>(null);
   const [uniquesFailed, setUniquesFailed] = useState(false);
   const [summary, setSummary] = useState<telemetryApi.TelemetrySummary | null>(
@@ -686,7 +774,7 @@ function TelemetryTab({ projectId }: { projectId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, refreshNonce]);
 
   const pageViewsStat = summary ? splitCompact(summary.pageViews) : null;
   const maxTaggedClick = Math.max(
@@ -913,11 +1001,364 @@ function TelemetryTab({ projectId }: { projectId: string }) {
           </Card>
         </div>
       </div>
+
+      <Card
+        title="Visitor geography"
+        aside={
+          <span className="mono faint" style={{ fontSize: 11 }}>
+            country · CF-IPCountry
+          </span>
+        }
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.4fr 1fr',
+            gap: 20,
+            marginTop: 18,
+          }}
+        >
+          <WorldMap data={summary?.countries ?? []} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            {rankedShares(summary?.countries ?? [], 7).map((c) => (
+              <MiniBar
+                key={c.key}
+                label={c.key === 'other' ? 'other' : countryName(c.key)}
+                pct={c.pct}
+                value={c.count.toLocaleString()}
+              />
+            ))}
+            {summary && summary.countries.length === 0 ? (
+              <div className="mono faint" style={{ fontSize: 11 }}>
+                No geo data recorded yet.
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div
+          className="mono"
+          style={{
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: '1px solid var(--border)',
+            fontSize: 11,
+            color: 'rgba(237,237,240,.35)',
+          }}
+        >
+          country only · IP discarded
+        </div>
+      </Card>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <Card
+          title="Device mix"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              sessions
+            </span>
+          }
+        >
+          {(() => {
+            const total = (summary?.devices ?? []).reduce(
+              (sum, d) => sum + d.count,
+              0,
+            );
+            const byKey = new Map(
+              (summary?.devices ?? []).map((d) => [d.key, d.count]),
+            );
+            if (total === 0) {
+              return (
+                <div className="mono faint" style={{ fontSize: 11, marginTop: 14 }}>
+                  No device data recorded yet.
+                </div>
+              );
+            }
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+                {DEVICE_ORDER.map((key) => (
+                  <MiniBar
+                    key={key}
+                    label={key}
+                    pct={((byKey.get(key) ?? 0) / total) * 100}
+                    value={`${(((byKey.get(key) ?? 0) / total) * 100).toFixed(0)}%`}
+                  />
+                ))}
+              </div>
+            );
+          })()}
+          {summary && summary.locales.length > 0 ? (
+            <div
+              className="mono"
+              style={{
+                marginTop: 14,
+                paddingTop: 12,
+                borderTop: '1px solid rgba(255,255,255,.07)',
+                fontSize: 11,
+                color: 'rgba(237,237,240,.35)',
+              }}
+            >
+              top locale {summary.locales[0].key} ·{' '}
+              {(
+                (summary.locales[0].count /
+                  summary.locales.reduce((s, l) => s + l.count, 0)) *
+                100
+              ).toFixed(0)}
+              %
+            </div>
+          ) : null}
+        </Card>
+
+        <Card
+          title="Scroll depth"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              % of views
+            </span>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+            {(summary?.scrollDepth ?? []).map((s) => (
+              <MiniBar
+                key={s.depth}
+                label={`${s.depth}%`}
+                pct={s.pct}
+                value={`${s.pct.toFixed(0)}%`}
+              />
+            ))}
+            {summary && summary.pageViews === 0 ? (
+              <div className="mono faint" style={{ fontSize: 11 }}>
+                No page views recorded yet.
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <Card
+          title="Largest Contentful Paint"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              p50 / p75
+            </span>
+          }
+        >
+          <VisualHead label="LCP P75" tag="" />
+          <BigStat
+            value={summary?.lcpP75 != null ? (summary.lcpP75 / 1000).toFixed(2) : '—'}
+            unit={summary?.lcpP75 != null ? 's' : undefined}
+            delta={summary?.lcpP50 != null ? `p50 ${Math.round(summary.lcpP50)}ms` : undefined}
+          />
+          <div
+            style={{
+              position: 'relative',
+              height: 8,
+              borderRadius: 4,
+              marginTop: 16,
+              background:
+                'linear-gradient(90deg, var(--good) 0 42%, var(--warn) 42% 72%, var(--bad) 72% 100%)',
+            }}
+          >
+            {summary?.lcpP75 != null ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  left: `${Math.min(100, (summary.lcpP75 / 6000) * 100)}%`,
+                  width: 2,
+                  height: 16,
+                  background: 'var(--text)',
+                }}
+              />
+            ) : null}
+          </div>
+          <div
+            className="mono"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: 8,
+              fontSize: 10.5,
+              color: 'rgba(237,237,240,.35)',
+            }}
+          >
+            <span>0s</span>
+            <span>2.5s</span>
+            <span>4.0s</span>
+            <span>6s</span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 9,
+              marginTop: 16,
+              paddingTop: 12,
+              borderTop: '1px solid rgba(255,255,255,.07)',
+            }}
+          >
+            {summary?.lcpColdP75 != null || summary?.lcpCachedP75 != null ? (
+              (() => {
+                const cold = summary?.lcpColdP75 ?? 0;
+                const cached = summary?.lcpCachedP75 ?? 0;
+                const scale = Math.max(cold, cached, 1);
+                return (
+                  <>
+                    <BarRow
+                      label="COLD"
+                      pct={(cold / scale) * 100}
+                      value={summary?.lcpColdP75 != null ? `${(summary.lcpColdP75 / 1000).toFixed(2)}s` : '—'}
+                      tone="var(--warn)"
+                      labelWidth={64}
+                    />
+                    <BarRow
+                      label="CACHED"
+                      pct={(cached / scale) * 100}
+                      value={summary?.lcpCachedP75 != null ? `${(summary.lcpCachedP75 / 1000).toFixed(2)}s` : '—'}
+                      tone="var(--good)"
+                      labelWidth={64}
+                    />
+                  </>
+                );
+              })()
+            ) : (
+              <div className="mono faint" style={{ fontSize: 11 }}>
+                No cold/cached-labeled LCP samples yet.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card
+          title="Time to First Byte"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              p50 / p75
+            </span>
+          }
+        >
+          <VisualHead
+            label="TTFB P75"
+            tag={summary?.ttfbHitMs != null || summary?.ttfbMissMs != null ? 'BY CACHE' : ''}
+          />
+          <BigStat
+            value={summary?.ttfbP75 != null ? String(Math.round(summary.ttfbP75)) : '—'}
+            unit={summary?.ttfbP75 != null ? 'ms' : undefined}
+            delta={summary?.ttfbP50 != null ? `p50 ${Math.round(summary.ttfbP50)}ms` : undefined}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 16 }}>
+            {summary?.ttfbHitMs != null || summary?.ttfbMissMs != null ? (
+              (() => {
+                const hit = summary?.ttfbHitMs ?? 0;
+                const miss = summary?.ttfbMissMs ?? 0;
+                const scale = Math.max(hit, miss, 1);
+                return (
+                  <>
+                    <BarRow
+                      label="HIT"
+                      pct={(hit / scale) * 100}
+                      value={summary?.ttfbHitMs != null ? `${Math.round(summary.ttfbHitMs)}ms` : '—'}
+                      tone="var(--good)"
+                      labelWidth={64}
+                    />
+                    <BarRow
+                      label="MISS"
+                      pct={(miss / scale) * 100}
+                      value={summary?.ttfbMissMs != null ? `${Math.round(summary.ttfbMissMs)}ms` : '—'}
+                      tone="var(--warn)"
+                      labelWidth={64}
+                    />
+                  </>
+                );
+              })()
+            ) : (
+              <div className="mono faint" style={{ fontSize: 11 }}>
+                No cache-labeled TTFB samples yet — needs the Server-Timing
+                cache-status entry to show up in real visits.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card
+          title="Dwell time"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              active bursts
+            </span>
+          }
+        >
+          <div style={{ display: 'flex', gap: 26, marginTop: 18 }}>
+            <div>
+              <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
+                {formatDuration(summary?.dwellP50 ?? null)}
+              </div>
+              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+                median burst
+              </div>
+            </div>
+            <div>
+              <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
+                {formatDuration(summary?.dwellAvgMs ?? null)}
+              </div>
+              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+                avg burst
+              </div>
+            </div>
+          </div>
+          <div
+            className="mono"
+            style={{
+              marginTop: 14,
+              paddingTop: 12,
+              borderTop: '1px solid rgba(255,255,255,.07)',
+              fontSize: 11,
+              color: 'rgba(237,237,240,.35)',
+            }}
+          >
+            per continuous active burst — pauses on tab-hide/30s idle, not
+            full session length
+          </div>
+        </Card>
+      </div>
+
+      <Card
+        title="Traffic sources (UTM)"
+        aside={
+          <span className="mono faint" style={{ fontSize: 11 }}>
+            source
+          </span>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+          {rankedShares(summary?.utmSources ?? [], 8).map((s) => (
+            <MiniBar key={s.key} label={s.key} pct={s.pct} value={s.count.toLocaleString()} />
+          ))}
+          {summary && summary.utmSources.length === 0 ? (
+            <div className="mono faint" style={{ fontSize: 11 }}>
+              No utm_source parameters recorded yet.
+            </div>
+          ) : null}
+        </div>
+        <div
+          className="mono"
+          style={{
+            marginTop: 14,
+            paddingTop: 12,
+            borderTop: '1px solid rgba(255,255,255,.07)',
+            fontSize: 11,
+            color: 'rgba(237,237,240,.35)',
+          }}
+        >
+          source only · medium/campaign not tracked · direct sessions not
+          counted here
+        </div>
+      </Card>
     </div>
   );
 }
 
-function ConnectionsTab() {
+function ConnectionsTab({ connections }: { connections: ConnectionEntry[] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
       <Card
@@ -1027,10 +1468,17 @@ export default function DashboardPage() {
   const activeProjectId = projectId ?? 'portal-api';
 
   const [project, setProject] = useState<projectsApi.Project | null>(null);
+  const [cloudflareLink, setCloudflareLink] =
+    useState<projectsApi.CloudflareLinkStatus | null>(null);
+  // Bumped by the header's Refresh button below — added to this effect's
+  // deps (and TelemetryTab's own) purely to retrigger the same fetches on
+  // demand, since nothing here polls on a timer otherwise.
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setProject(null);
+    setCloudflareLink(null);
     projectsApi
       .get(activeProjectId)
       .then((res) => {
@@ -1040,10 +1488,40 @@ export default function DashboardPage() {
         // Header falls back to the raw id below — no need for a distinct
         // error state here, this bar is cosmetic.
       });
+    // Config-presence check, not a live probe — see
+    // CloudflareZoneLinkService.getStatus's own comment. Left null (not
+    // "CONNECT") on failure below, same as project — the Connections widget
+    // treats null as "still loading", not "definitely not connected".
+    projectsApi
+      .getCloudflareLinkStatus(activeProjectId)
+      .then((res) => {
+        if (!cancelled) setCloudflareLink(res);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [activeProjectId]);
+  }, [activeProjectId, refreshNonce]);
+
+  // Telemetry SDK is "configured" if the project has at least one allowed
+  // origin set — an input that exists, not a live check that the embed
+  // script is actually firing events. Cloudflare is real the same way (a
+  // linked zone, not a reachability probe). GitHub/AWS CloudWatch stay mock
+  // — those integrations don't exist in this codebase yet.
+  const connections: ConnectionEntry[] = [
+    {
+      name: 'Telemetry SDK',
+      status:
+        project && project.allowedOrigins.length > 0 ? 'CONNECTED' : 'CONNECT',
+    },
+    {
+      name: 'Cloudflare',
+      status: cloudflareLink?.linked ? 'CONNECTED' : 'CONNECT',
+    },
+    ...mockConnections.filter(
+      (c) => c.name === 'GitHub' || c.name === 'AWS CloudWatch',
+    ),
+  ];
 
   return (
     <div
@@ -1070,6 +1548,7 @@ export default function DashboardPage() {
               type="button"
               className="btn btn-primary"
               style={{ height: 30 }}
+              onClick={() => setRefreshNonce((n) => n + 1)}
             >
               Refresh
             </button>
@@ -1106,8 +1585,15 @@ export default function DashboardPage() {
         <main style={{ padding: '22px 26px 30px' }}>
           {tab === 'dev' && <DevTab />}
           {tab === 'post' && <PostDevTab />}
-          {tab === 'telemetry' && <TelemetryTab projectId={activeProjectId} />}
-          {tab === 'connections' && <ConnectionsTab />}
+          {tab === 'telemetry' && (
+            <TelemetryTab
+              projectId={activeProjectId}
+              refreshNonce={refreshNonce}
+            />
+          )}
+          {tab === 'connections' && (
+            <ConnectionsTab connections={connections} />
+          )}
         </main>
 
         <aside

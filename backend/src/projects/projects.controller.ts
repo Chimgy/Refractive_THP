@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -12,9 +14,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LiveAuthGuard } from '../auth/guards/live-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user.type';
+import { CloudflareZoneLinkService } from '../telemetry/cloudflare-zone-link.service';
 import { TelemetryMetricsQueryService } from '../telemetry/telemetry-metrics-query.service';
 import { TelemetryUniquesService } from '../telemetry/telemetry-uniques.service';
 import { CreateProjectDto } from './dto/create-project.dto';
+import { LinkCloudflareZoneDto } from './dto/link-cloudflare-zone.dto';
 import { ProjectsService } from './projects.service';
 
 @Controller('projects')
@@ -24,6 +28,7 @@ export class ProjectsController {
     private readonly projectsService: ProjectsService,
     private readonly uniquesService: TelemetryUniquesService,
     private readonly metricsQueryService: TelemetryMetricsQueryService,
+    private readonly cloudflareZoneLinkService: CloudflareZoneLinkService,
   ) {}
 
   @Post()
@@ -83,5 +88,47 @@ export class ProjectsController {
     await this.projectsService.findByIdForCompany(projectId, user.companyId);
     const days = Math.min(30, Math.max(1, Number(daysParam) || 7));
     return this.metricsQueryService.getSummary(projectId, days);
+  }
+
+  // Ownership-checked the same way telemetrySummary is above, before
+  // touching anything Cloudflare-related. The token is never returned here
+  // or anywhere else — CloudflareZoneLinkService only ever hands the
+  // decrypted token to TelemetryCloudflarePullProcessor's own outbound
+  // calls.
+  @Post(':projectId/cloudflare-link')
+  async linkCloudflareZone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('projectId') projectId: string,
+    @Body() dto: LinkCloudflareZoneDto,
+  ) {
+    await this.projectsService.findByIdForCompany(projectId, user.companyId);
+    await this.cloudflareZoneLinkService.link(
+      projectId,
+      dto.zoneId,
+      dto.apiToken,
+    );
+    return { projectId, zoneId: dto.zoneId, linked: true };
+  }
+
+  @Delete(':projectId/cloudflare-link')
+  @HttpCode(204)
+  async unlinkCloudflareZone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('projectId') projectId: string,
+  ) {
+    await this.projectsService.findByIdForCompany(projectId, user.companyId);
+    await this.cloudflareZoneLinkService.unlink(projectId);
+  }
+
+  // Config-presence check for the dashboard's "Connections" widget — not a
+  // live health probe against Cloudflare's API (see getStatus's own
+  // comment). Never returns the token.
+  @Get(':projectId/cloudflare-link')
+  async cloudflareLinkStatus(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('projectId') projectId: string,
+  ) {
+    await this.projectsService.findByIdForCompany(projectId, user.companyId);
+    return this.cloudflareZoneLinkService.getStatus(projectId);
   }
 }

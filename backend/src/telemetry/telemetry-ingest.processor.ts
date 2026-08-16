@@ -57,7 +57,10 @@ export class TelemetryIngestProcessor extends WorkerHost {
 
     const destinations: [string, Promise<void>][] = [
       ['snapshots', this.snapshots.capture(payload, { projectId, userAgent })],
-      ['aggregation', this.aggregation.recordBatch(payload, { projectId })],
+      [
+        'aggregation',
+        this.aggregation.recordBatch(payload, { projectId, country }),
+      ],
       ['uniques', this.uniques.recordVisit({ projectId, ip, userAgent })],
       ['errors', this.errors.recordBatch(payload, { projectId })],
       ['country', this.aggregation.recordCountry({ projectId, country })],

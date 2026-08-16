@@ -185,14 +185,40 @@ export const THP_ANALYTICS_SCRIPT = `(function () {
   }
   function flushVitals() {
     var vitals = {};
-    if (lcpValue !== null) vitals.lcp = Math.round(lcpValue);
     var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (lcpValue !== null) {
+      vitals.lcp = Math.round(lcpValue);
+      // 'reload'/'back_forward' (and 'prerender', effectively pre-warmed) are
+      // cache-primed; 'navigate' is a cold load. Read off the same nav entry
+      // below rather than a separate lookup.
+      if (nav) {
+        vitals.lcpCache = (nav.type === 'reload' || nav.type === 'back_forward' || nav.type === 'prerender') ? 'cached' : 'cold';
+      }
+    }
     if (nav) {
       vitals.ttfb = Math.round(nav.responseStart);
       vitals.dns = Math.round(nav.domainLookupEnd - nav.domainLookupStart);
       vitals.tcp = Math.round(nav.connectEnd - nav.connectStart);
+      // No time spent connecting means the browser reused an existing
+      // connection rather than doing a fresh TCP handshake — reliable enough
+      // off the already-rounded tcp value without a separate check.
+      vitals.navReused = (vitals.tcp === 0);
       vitals.domContentLoaded = Math.round(nav.domContentLoadedEventEnd);
       vitals.loadComplete = Math.round(nav.loadEventEnd);
+      // A Cloudflare Transform Rule mirrors cf-cache-status into a
+      // Server-Timing entry named "cf-cache" (see docs — regular response
+      // headers aren't readable here at all; Server-Timing is the one API
+      // that exposes server-set metadata on the navigation entry itself).
+      // Labels this exact page load's own already-accurate ttfb above, not
+      // a separate/later measurement.
+      if (nav.serverTiming) {
+        for (var i = 0; i < nav.serverTiming.length; i++) {
+          if (nav.serverTiming[i].name === 'cf-cache') {
+            vitals.ttfbCache = nav.serverTiming[i].description;
+            break;
+          }
+        }
+      }
     }
     if (Object.keys(vitals).length) track('vitals', vitals);
   }

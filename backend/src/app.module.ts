@@ -12,6 +12,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
+import { dataSourceOptions } from './database/data-source';
 import { TenantModule } from './tenant/tenant.module';
 import { UsersModule } from './users/users.module';
 
@@ -19,14 +20,12 @@ import { UsersModule } from './users/users.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST ?? 'localhost',
-      port: Number(process.env.DB_PORT ?? 5432),
-      username: process.env.DB_USERNAME ?? 'postgres',
-      password: process.env.DB_PASSWORD ?? 'postgres',
-      database: process.env.DB_NAME ?? 'refractive_thp',
+      ...dataSourceOptions,
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
+      // Schema changes now only ship via migrations (backend/src/database/migrations) —
+      // synchronize is off everywhere, not just production, so dev never drifts
+      // from what a real migration would produce.
+      synchronize: false,
     }),
     RedisModule,
     // Root BullMQ connection — a dedicated ioredis client, not the shared one

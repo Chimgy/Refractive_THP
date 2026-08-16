@@ -4,17 +4,34 @@ import {
   PERIOD_TTL_SECONDS,
   clicksKey,
   countriesKey,
+  devicesKey,
   dwellKey,
   eventTypesKey,
+  lcpCachedKey,
+  lcpColdKey,
   lcpKey,
+  localesKey,
+  navColdKey,
+  navReusedKey,
   pagesKey,
   periodKey,
   scrollKey,
   sessionDurationKey,
   sessionsKey,
+  ttfbHitKey,
   ttfbKey,
+  ttfbMissKey,
   utmSourceKey,
 } from './telemetry-aggregation-keys.util';
+
+// Matches the breakpoints MetricsPage.tsx documents for the "device mix"
+// card — kept here rather than duplicated so the aggregation and the write-up
+// can't silently drift apart.
+function deviceCategory(viewportWidth: number): string {
+  if (viewportWidth <= 768) return 'mobile';
+  if (viewportWidth >= 1280) return 'desktop';
+  return 'tablet';
+}
 
 // Sanity ceilings for client-reported durations — confirmed necessary
 // against real data: a backgrounded browser tab left open for hours keeps
@@ -30,6 +47,9 @@ const MAX_LCP_MS = 60_000;
 const MAX_TTFB_MS = 60_000;
 const MAX_DWELL_SAMPLE_MS = 30 * 60_000;
 const MAX_SESSION_DURATION_MS = 60 * 60_000;
+// Same reasoning as MAX_TTFB_MS — a fresh DNS lookup or TCP handshake has no
+// legitimate reason to take longer than this either.
+const MAX_NAV_TIMING_MS = 60_000;
 
 // Replaces the old daily-bucketed TelemetryCountersService — writes go into
 // short-lived 5-minute-period keys instead, consumed and discarded by
@@ -44,7 +64,7 @@ export class TelemetryAggregationService {
 
   async recordBatch(
     payload: Record<string, unknown>,
-    meta: { projectId: string },
+    meta: { projectId: string; country: string | null },
   ): Promise<void> {
     const rawEvents = Array.isArray(payload.events) ? payload.events : [];
     if (rawEvents.length === 0) return;
@@ -52,6 +72,17 @@ export class TelemetryAggregationService {
     const period = periodKey(new Date());
     const sessionId =
       typeof payload.sessionId === 'string' ? payload.sessionId : null;
+
+    // Batch-level metadata (telemetry-script.ts sends it on every flush, not
+    // per-event) — read once here rather than per-event below.
+    const device =
+      typeof payload.device === 'object' && payload.device !== null
+        ? (payload.device as Record<string, unknown>)
+        : null;
+    const viewport = Array.isArray(device?.viewport) ? device.viewport : null;
+    const viewportWidth =
+      typeof viewport?.[0] === 'number' ? viewport[0] : null;
+    const locale = typeof device?.lang === 'string' ? device.lang : null;
 
     // Same-key/field increments within one batch tallied locally first —
     // one HINCRBY by N, not N round trips (same pattern the old counters
@@ -82,6 +113,18 @@ export class TelemetryAggregationService {
         sessionsStarted += 1;
         if (typeof e.utm_source === 'string') {
           bump(utmSourceKey(meta.projectId, period), e.utm_source);
+        }
+        // Once per session, same reasoning as utm_source above — a per-event
+        // or per-flush bump would count one visitor dozens of times over a
+        // long session instead of once.
+        if (viewportWidth !== null) {
+          bump(
+            devicesKey(meta.projectId, period),
+            deviceCategory(viewportWidth),
+          );
+        }
+        if (locale) {
+          bump(localesKey(meta.projectId, period), locale);
         }
       } else if (type === 'session_end' && sessionId) {
         // Prefer activeMs (cumulative dwell — excludes hidden/idle time,
@@ -115,12 +158,67 @@ export class TelemetryAggregationService {
             key: lcpKey(meta.projectId, period),
             value: String(e.lcp),
           });
+          // Additive split alongside the blended push above — see
+          // lcpColdKey/lcpCachedKey's own comments for why this stays
+          // separate from lcpKey rather than replacing it.
+          if (e.lcpCache === 'cold') {
+            listPushes.push({
+              key: lcpColdKey(meta.projectId, period),
+              value: String(e.lcp),
+            });
+          } else if (e.lcpCache === 'cached') {
+            listPushes.push({
+              key: lcpCachedKey(meta.projectId, period),
+              value: String(e.lcp),
+            });
+          }
         }
         if (typeof e.ttfb === 'number' && e.ttfb <= MAX_TTFB_MS) {
           listPushes.push({
             key: ttfbKey(meta.projectId, period),
             value: String(e.ttfb),
           });
+          // Additive split alongside the blended push above, same shape as
+          // lcp/lcpCold/lcpCached — labels this exact sample with the real
+          // cf-cache-status a Cloudflare Transform Rule mirrors into
+          // Server-Timing (telemetry-script.ts). Anything other than a
+          // clean hit/miss (dynamic, expired, stale, bypass, ...) is left
+          // out of both buckets rather than mislabeled into one.
+          const ttfbCache =
+            typeof e.ttfbCache === 'string'
+              ? e.ttfbCache.toLowerCase()
+              : null;
+          if (ttfbCache === 'hit') {
+            listPushes.push({
+              key: ttfbHitKey(meta.projectId, period),
+              value: String(e.ttfb),
+            });
+          } else if (ttfbCache === 'miss') {
+            listPushes.push({
+              key: ttfbMissKey(meta.projectId, period),
+              value: String(e.ttfb),
+            });
+          }
+        }
+        // Reused connections are just a country-tagged counter (no ms —
+        // near-zero by definition, not diagnostically interesting). Cold
+        // connections carry their actual dns/tcp ms, composite-encoded with
+        // country same as sessionDurationKey encodes sessionId — one Redis
+        // key per period, not one per country.
+        if (
+          typeof e.dns === 'number' &&
+          typeof e.tcp === 'number' &&
+          e.dns <= MAX_NAV_TIMING_MS &&
+          e.tcp <= MAX_NAV_TIMING_MS
+        ) {
+          if (e.navReused === true) {
+            bump(navReusedKey(meta.projectId, period), meta.country ?? 'unknown');
+          } else if (e.navReused === false) {
+            listPushes.push({
+              key: navColdKey(meta.projectId, period),
+              value: `${meta.country ?? 'unknown'}:${e.dns}:${e.tcp}`,
+            });
+          }
         }
       } else if (
         type === 'dwell' &&

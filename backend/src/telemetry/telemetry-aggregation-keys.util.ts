@@ -39,6 +39,10 @@ export const utmSourceKey = (projectId: string, period: string) =>
   prefix('utm_source', projectId, period);
 export const eventTypesKey = (projectId: string, period: string) =>
   prefix('event_types', projectId, period);
+export const devicesKey = (projectId: string, period: string) =>
+  prefix('devices', projectId, period);
+export const localesKey = (projectId: string, period: string) =>
+  prefix('locales', projectId, period);
 
 // Scalar counter — plain INCRBY.
 export const sessionsKey = (projectId: string, period: string) =>
@@ -54,6 +58,32 @@ export const ttfbKey = (projectId: string, period: string) =>
   prefix('ttfb', projectId, period);
 export const dwellKey = (projectId: string, period: string) =>
   prefix('dwell', projectId, period);
+// LCP split by navigation type (vitals.lcpCache) — additive alongside lcpKey
+// above, which stays blended. Plain numeric lists, same shape as lcpKey —
+// no composite-string parsing needed since there's no geo dimension here.
+export const lcpColdKey = (projectId: string, period: string) =>
+  prefix('lcp_cold', projectId, period);
+export const lcpCachedKey = (projectId: string, period: string) =>
+  prefix('lcp_cached', projectId, period);
+// Cold DNS/TCP samples (vitals.tcp > 0) — entries are
+// `${country}:${dns}:${tcp}`, same composite-string-in-one-list idiom as
+// sessionDurationKey below, so a per-period key count doesn't scale with the
+// number of countries seen.
+export const navColdKey = (projectId: string, period: string) =>
+  prefix('nav_cold', projectId, period);
+// Reused connections (vitals.tcp === 0) — country-tagged counter only, no ms
+// stored (near-zero by definition). Hash counter, same shape as
+// countriesKey.
+export const navReusedKey = (projectId: string, period: string) =>
+  prefix('nav_reused', projectId, period);
+// TTFB split by real cf-cache-status, read client-side via a Server-Timing
+// entry a Cloudflare Transform Rule mirrors it into (vitals.ttfbCache) —
+// additive alongside ttfbKey above, which stays blended. Plain numeric
+// lists, same shape as lcpColdKey/lcpCachedKey.
+export const ttfbHitKey = (projectId: string, period: string) =>
+  prefix('ttfb_hit', projectId, period);
+export const ttfbMissKey = (projectId: string, period: string) =>
+  prefix('ttfb_miss', projectId, period);
 // Entries are `${sessionId}:${durationMs}` — session_end can fire more than
 // once per session per period (external_data.md section 1's documented
 // tab-hide quirk), so rollup groups by sessionId and takes the max before

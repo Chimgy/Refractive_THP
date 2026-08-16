@@ -17,3 +17,13 @@ export function list(): Promise<Project[]> {
 export function get(id: string): Promise<Project> {
   return request<Project>(`/tenant/projects/${encodeURIComponent(id)}`);
 }
+
+export type CloudflareLinkStatus = { linked: boolean; zoneId: string | null };
+
+export function getCloudflareLinkStatus(
+  id: string,
+): Promise<CloudflareLinkStatus> {
+  return request<CloudflareLinkStatus>(
+    `/tenant/projects/${encodeURIComponent(id)}/cloudflare-link`,
+  );
+}
