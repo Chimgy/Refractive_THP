@@ -114,11 +114,38 @@ export class SdkTelemetryMetric {
   @Column({ type: 'numeric', nullable: true })
   dwellP50: string | null;
 
+  // Despite the name, this is *active* session time (activeMs, preferred
+  // over durationMs — see telemetry-aggregation.service.ts's session_end
+  // handling), not wall-clock session length. sessionWall* below is the
+  // true wall-clock counterpart, added later once that gap was noticed —
+  // kept as separate columns rather than renaming these, since these are
+  // already read elsewhere by name.
   @Column({ type: 'numeric', nullable: true })
   sessionDurationAvgMs: string | null;
 
   @Column({ type: 'numeric', nullable: true })
   sessionDurationP50: string | null;
+
+  // True wall-clock session length (Date.now() - startedAt on the client),
+  // always populated from session_end's durationMs regardless of whether
+  // activeMs is also present — see sessionWallKey's own comment.
+  @Column({ type: 'numeric', nullable: true })
+  sessionWallAvgMs: string | null;
+
+  @Column({ type: 'numeric', nullable: true })
+  sessionWallP50: string | null;
+
+  @Column({ type: 'int', default: 0 })
+  sessionWallCount: number;
+
+  // Distribution of wall-clock session durations across fixed buckets (see
+  // SESSION_WALL_DURATION_BUCKETS in telemetry-rollup.processor.ts) — for
+  // the "Session start / end + duration" widget's histogram, which needs a
+  // real distribution, not just avg/P50. Computed from the same deduped
+  // per-session samples as sessionWallAvgMs/P50 above, before they're
+  // discarded at rollup.
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  sessionWallDurationBuckets: { key: string; count: number }[];
 
   // Cold-connection (fresh DNS lookup + fresh TCP handshake, vitals.tcp > 0)
   // DNS/TCP timing — see navReusedCountries below for the "reused, no ms
@@ -146,6 +173,17 @@ export class SdkTelemetryMetric {
 
   @Column({ type: 'int', default: 0 })
   navColdCount: number;
+
+  // Load-phase milestones for the "navigation timing" waterfall widget —
+  // wall-clock-from-navigation-start timestamps (nav.domContentLoadedEventEnd/
+  // nav.loadEventEnd), cold-connection samples only (see navColdKey), P50
+  // only since this is a single-number-per-phase display, not a percentile
+  // spread like lcp/ttfb.
+  @Column({ type: 'numeric', nullable: true })
+  domContentLoadedColdP50: string | null;
+
+  @Column({ type: 'numeric', nullable: true })
+  loadCompleteColdP50: string | null;
 
   @Column({ type: 'jsonb', default: () => "'[]'" })
   navColdCountries: { key: string; count: number }[];

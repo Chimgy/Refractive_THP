@@ -20,7 +20,6 @@ import { BarRow, BigStat, VisualHead } from './MetricsPage';
 import {
   connections as mockConnections,
   deploymentSeries,
-  errorBudget,
   latencySeries,
   leadTimeBuckets,
   leadTimeSeries,
@@ -340,7 +339,58 @@ function DevTab() {
   );
 }
 
-function PostDevTab() {
+function PostDevTab({ projectId }: { projectId: string }) {
+  const [summary, setSummary] = useState<telemetryApi.TelemetrySummary | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setSummary(null);
+    telemetryApi
+      .summary(projectId, 1)
+      .then((res) => {
+        if (!cancelled) setSummary(res);
+      })
+      .catch(() => {
+        // Real Cloudflare zone-link data — silently keep the "—" placeholder
+        // rather than mock numbers if the fetch fails; ALB/ECS/RDS below stay
+        // mock regardless (AWS-side pull isn't built yet).
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  const requestTotal = summary
+    ? summary.status2xxCount +
+      summary.status3xxCount +
+      summary.status4xxCount +
+      summary.status5xxCount
+    : 0;
+  const cacheTotal = summary
+    ? summary.cacheHitCount + summary.cacheMissCount
+    : 0;
+  const fiveXxRatePct =
+    summary && requestTotal > 0
+      ? (summary.status5xxCount / requestTotal) * 100
+      : null;
+  const cacheHitRatioPct =
+    summary && cacheTotal > 0
+      ? (summary.cacheHitCount / cacheTotal) * 100
+      : null;
+  const requests = summary ? splitCompact(requestTotal) : null;
+
+  const responseMix = summary
+    ? ([
+        { code: '2xx', count: summary.status2xxCount, tone: 'var(--good)' },
+        { code: '3xx', count: summary.status3xxCount, tone: 'rgba(123,92,224,.6)' },
+        { code: '4xx', count: summary.status4xxCount, tone: 'var(--warn)' },
+        { code: '5xx', count: summary.status5xxCount, tone: 'var(--bad)' },
+      ] as const)
+    : [];
+  const responseMixTotal = responseMix.reduce((sum, r) => sum + r.count, 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="stat-strip">
@@ -353,21 +403,19 @@ function PostDevTab() {
         />
         <Stat
           label="5xx error rate"
-          value="0.30"
+          value={fiveXxRatePct !== null ? fiveXxRatePct.toFixed(2) : '—'}
           unit="%"
-          delta="▼ 0.08pt vs 24h"
-          deltaTone="good"
+          delta="Cloudflare edge · 24h"
         />
         <Stat
           label="Requests 24h"
-          value="184"
-          unit="k"
-          delta="▲ 6% vs 24h"
-          deltaTone="good"
+          value={requests ? requests.value : '—'}
+          unit={requests?.unit}
+          delta="Cloudflare edge"
         />
         <Stat
           label="Cache hit ratio"
-          value="91.2"
+          value={cacheHitRatioPct !== null ? cacheHitRatioPct.toFixed(1) : '—'}
           unit="%"
           delta="Cloudflare edge"
         />
@@ -494,24 +542,30 @@ function PostDevTab() {
               marginTop: 22,
             }}
           >
-            {errorBudget.map((e) => (
+            {responseMix.map((r) => (
               <div
-                key={e.code}
-                style={{ width: `${e.share}%`, background: e.tone }}
+                key={r.code}
+                style={{
+                  width: `${responseMixTotal > 0 ? (r.count / responseMixTotal) * 100 : 0}%`,
+                  background: r.tone,
+                }}
               />
             ))}
           </div>
           <div style={{ display: 'flex', gap: 22, marginTop: 16 }}>
-            {errorBudget.map((e) => (
-              <div key={e.code}>
-                <div className="mono" style={{ fontSize: 18, color: e.tone }}>
-                  {e.share}%
+            {responseMix.map((r) => (
+              <div key={r.code}>
+                <div className="mono" style={{ fontSize: 18, color: r.tone }}>
+                  {responseMixTotal > 0
+                    ? ((r.count / responseMixTotal) * 100).toFixed(1)
+                    : '0.0'}
+                  %
                 </div>
                 <div
                   className="mono faint"
                   style={{ fontSize: 10.5, marginTop: 3 }}
                 >
-                  {e.code}
+                  {r.code}
                 </div>
               </div>
             ))}
@@ -632,6 +686,10 @@ function formatDuration(ms: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function formatSeconds(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`;
+}
+
 function pctDeltaProps(
   pct: number | null,
   suffix: string,
@@ -641,16 +699,6 @@ function pctDeltaProps(
   return {
     delta: `${arrow} ${Math.abs(pct).toFixed(1)}% ${suffix}`,
     deltaTone: pct >= 0 ? 'good' : 'bad',
-  };
-}
-
-function msDeltaProps(deltaMs: number | null, suffix: string) {
-  if (deltaMs === null) return { delta: suffix, deltaTone: 'muted' as const };
-  const arrow = deltaMs >= 0 ? '▲' : '▼';
-  const seconds = Math.round(Math.abs(deltaMs) / 1000);
-  return {
-    delta: `${arrow} ${seconds}s ${suffix}`,
-    deltaTone: (deltaMs >= 0 ? 'good' : 'bad') as 'good' | 'bad',
   };
 }
 
@@ -707,6 +755,52 @@ function MiniBar({
   );
 }
 
+const msFmt = (v: number | null) => (v != null ? `${Math.round(v)}ms` : '—');
+
+// One split-bucket row (TTFB's HIT/MISS, LCP's COLD/CACHED, ...): an
+// optional sample count, a bar scaled off p50 (so the buckets stay visually
+// comparable), and the full p50/p75/p99 spread underneath so the headline
+// number isn't the only percentile shown.
+function PercentileCacheBlock({
+  label,
+  count,
+  p50,
+  p75,
+  p99,
+  pct,
+  tone,
+  fmt = msFmt,
+}: {
+  label: string;
+  count?: number;
+  p50: number | null;
+  p75: number | null;
+  p99: number | null;
+  pct: number;
+  tone: string;
+  fmt?: (v: number | null) => string;
+}) {
+  return (
+    <div>
+      <BarRow
+        label={count != null ? `${label} · ${count.toLocaleString()}` : label}
+        pct={pct}
+        value={fmt(p50)}
+        tone={tone}
+        labelWidth={110}
+      />
+      <div
+        className="mono faint"
+        style={{ fontSize: 10, marginLeft: 122, marginTop: 4, display: 'flex', gap: 12 }}
+      >
+        <span>p50 {fmt(p50)}</span>
+        <span>p75 {fmt(p75)}</span>
+        <span>p99 {fmt(p99)}</span>
+      </div>
+    </div>
+  );
+}
+
 // Top N entries by count, sharing the remainder into a synthetic "other" row
 // rather than dropping it silently — used for any breakdown that can have
 // more distinct keys than are worth listing (countries, UTM sources).
@@ -746,12 +840,27 @@ function TelemetryTab({
   );
   const [summaryFailed, setSummaryFailed] = useState(false);
 
+  const [errors, setErrors] = useState<telemetryApi.ErrorFingerprint[] | null>(
+    null,
+  );
+  const [errorsFailed, setErrorsFailed] = useState(false);
+  const [expandedFingerprint, setExpandedFingerprint] = useState<
+    string | null
+  >(null);
+  const [snapshotsByFingerprint, setSnapshotsByFingerprint] = useState<
+    Record<string, telemetryApi.ErrorSnapshot[] | 'loading' | 'failed'>
+  >({});
+
   useEffect(() => {
     let cancelled = false;
     setUniques(null);
     setUniquesFailed(false);
     setSummary(null);
     setSummaryFailed(false);
+    setErrors(null);
+    setErrorsFailed(false);
+    setExpandedFingerprint(null);
+    setSnapshotsByFingerprint({});
 
     telemetryApi
       .uniqueVisitors(projectId, 7)
@@ -771,16 +880,88 @@ function TelemetryTab({
         if (!cancelled) setSummaryFailed(true);
       });
 
+    telemetryApi
+      .listErrors(projectId)
+      .then((res) => {
+        if (!cancelled) setErrors(res);
+      })
+      .catch(() => {
+        if (!cancelled) setErrorsFailed(true);
+      });
+
     return () => {
       cancelled = true;
     };
   }, [projectId, refreshNonce]);
+
+  function toggleErrorRow(fingerprint: string) {
+    if (expandedFingerprint === fingerprint) {
+      setExpandedFingerprint(null);
+      return;
+    }
+    setExpandedFingerprint(fingerprint);
+    if (snapshotsByFingerprint[fingerprint]) return;
+    setSnapshotsByFingerprint((prev) => ({
+      ...prev,
+      [fingerprint]: 'loading',
+    }));
+    telemetryApi
+      .errorSnapshots(projectId, fingerprint)
+      .then((res) => {
+        setSnapshotsByFingerprint((prev) => ({ ...prev, [fingerprint]: res }));
+      })
+      .catch(() => {
+        setSnapshotsByFingerprint((prev) => ({
+          ...prev,
+          [fingerprint]: 'failed',
+        }));
+      });
+  }
 
   const pageViewsStat = summary ? splitCompact(summary.pageViews) : null;
   const maxTaggedClick = Math.max(
     1,
     ...(summary?.taggedClicks.map((c) => c.count) ?? [1]),
   );
+
+  const attentionPct =
+    summary?.avgSessionMs != null &&
+    summary?.sessionWallAvgMs != null &&
+    summary.sessionWallAvgMs > 0
+      ? Math.min(100, (summary.avgSessionMs / summary.sessionWallAvgMs) * 100)
+      : null;
+
+  const pagesPerSession =
+    summary && summary.sessions > 0
+      ? summary.pageViews / summary.sessions
+      : null;
+
+  // DNS/TCP are individual phase durations; domContentLoaded/loadComplete
+  // are cumulative-from-navigation-start timestamps, so the DOM-load and
+  // complete segments below are the remainder after subtracting everything
+  // before them — a waterfall decomposition, not four independent samples.
+  const navPhases = (() => {
+    const dns = summary?.dnsColdP50;
+    const tcp = summary?.tcpColdP50;
+    const dom = summary?.domContentLoadedColdP50;
+    const complete = summary?.loadCompleteColdP50;
+    if (dns == null || tcp == null || dom == null || complete == null) {
+      return null;
+    }
+    const domPhase = Math.max(0, dom - dns - tcp);
+    const completePhase = Math.max(0, complete - dom);
+    const total = Math.max(1, dns + tcp + domPhase + completePhase);
+    return {
+      dns,
+      tcp,
+      dom: domPhase,
+      complete,
+      dnsPct: (dns / total) * 100,
+      tcpPct: (tcp / total) * 100,
+      domPct: (domPhase / total) * 100,
+      completePct: (completePhase / total) * 100,
+    };
+  })();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -800,11 +981,10 @@ function TelemetryTab({
           deltaTone={uniquesFailed ? 'bad' : 'muted'}
         />
         <Stat
-          label="Avg session"
-          value={formatDuration(summary?.avgSessionMs ?? null)}
-          {...(summaryFailed
-            ? { delta: 'failed to load', deltaTone: 'bad' as const }
-            : msDeltaProps(summary?.avgSessionDeltaMs ?? null, 'vs prev 7d'))}
+          label="Median session"
+          value={formatDuration(summary?.sessionWallP50 ?? null)}
+          delta={summaryFailed ? 'failed to load' : 'wall clock · median, outlier-resistant'}
+          deltaTone={summaryFailed ? 'bad' : 'muted'}
         />
         <Stat
           label="Events 24h"
@@ -1143,11 +1323,17 @@ function TelemetryTab({
             </span>
           }
         >
-          <VisualHead label="LCP P75" tag="" />
+          <VisualHead
+            label="LCP P50 · CACHED"
+            tag={
+              summary?.lcpColdP50 != null || summary?.lcpCachedP50 != null
+                ? 'BY CACHE'
+                : ''
+            }
+          />
           <BigStat
-            value={summary?.lcpP75 != null ? (summary.lcpP75 / 1000).toFixed(2) : '—'}
-            unit={summary?.lcpP75 != null ? 's' : undefined}
-            delta={summary?.lcpP50 != null ? `p50 ${Math.round(summary.lcpP50)}ms` : undefined}
+            value={summary?.lcpCachedP50 != null ? (summary.lcpCachedP50 / 1000).toFixed(2) : '—'}
+            unit={summary?.lcpCachedP50 != null ? 's' : undefined}
           />
           <div
             style={{
@@ -1159,12 +1345,12 @@ function TelemetryTab({
                 'linear-gradient(90deg, var(--good) 0 42%, var(--warn) 42% 72%, var(--bad) 72% 100%)',
             }}
           >
-            {summary?.lcpP75 != null ? (
+            {summary?.lcpCachedP50 != null ? (
               <div
                 style={{
                   position: 'absolute',
                   top: -4,
-                  left: `${Math.min(100, (summary.lcpP75 / 6000) * 100)}%`,
+                  left: `${Math.min(100, (summary.lcpCachedP50 / 6000) * 100)}%`,
                   width: 2,
                   height: 16,
                   background: 'var(--text)',
@@ -1191,32 +1377,37 @@ function TelemetryTab({
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 9,
+              gap: 14,
               marginTop: 16,
               paddingTop: 12,
               borderTop: '1px solid rgba(255,255,255,.07)',
             }}
           >
-            {summary?.lcpColdP75 != null || summary?.lcpCachedP75 != null ? (
+            {summary?.lcpColdP50 != null || summary?.lcpCachedP50 != null ? (
               (() => {
-                const cold = summary?.lcpColdP75 ?? 0;
-                const cached = summary?.lcpCachedP75 ?? 0;
+                const sFmt = (v: number | null) => (v != null ? `${(v / 1000).toFixed(2)}s` : '—');
+                const cold = summary?.lcpColdP50 ?? 0;
+                const cached = summary?.lcpCachedP50 ?? 0;
                 const scale = Math.max(cold, cached, 1);
                 return (
                   <>
-                    <BarRow
+                    <PercentileCacheBlock
                       label="COLD"
+                      p50={summary?.lcpColdP50 ?? null}
+                      p75={summary?.lcpColdP75 ?? null}
+                      p99={summary?.lcpColdP99 ?? null}
                       pct={(cold / scale) * 100}
-                      value={summary?.lcpColdP75 != null ? `${(summary.lcpColdP75 / 1000).toFixed(2)}s` : '—'}
                       tone="var(--warn)"
-                      labelWidth={64}
+                      fmt={sFmt}
                     />
-                    <BarRow
+                    <PercentileCacheBlock
                       label="CACHED"
+                      p50={summary?.lcpCachedP50 ?? null}
+                      p75={summary?.lcpCachedP75 ?? null}
+                      p99={summary?.lcpCachedP99 ?? null}
                       pct={(cached / scale) * 100}
-                      value={summary?.lcpCachedP75 != null ? `${(summary.lcpCachedP75 / 1000).toFixed(2)}s` : '—'}
                       tone="var(--good)"
-                      labelWidth={64}
+                      fmt={sFmt}
                     />
                   </>
                 );
@@ -1233,40 +1424,47 @@ function TelemetryTab({
           title="Time to First Byte"
           aside={
             <span className="mono faint" style={{ fontSize: 11 }}>
-              p50 / p75
+              hit p50
             </span>
           }
         >
           <VisualHead
-            label="TTFB P75"
-            tag={summary?.ttfbHitMs != null || summary?.ttfbMissMs != null ? 'BY CACHE' : ''}
+            label="TTFB P50 · HIT"
+            tag={
+              summary?.ttfbHitP50 != null || summary?.ttfbMissP50 != null
+                ? 'BY CACHE'
+                : ''
+            }
           />
           <BigStat
-            value={summary?.ttfbP75 != null ? String(Math.round(summary.ttfbP75)) : '—'}
-            unit={summary?.ttfbP75 != null ? 'ms' : undefined}
-            delta={summary?.ttfbP50 != null ? `p50 ${Math.round(summary.ttfbP50)}ms` : undefined}
+            value={summary?.ttfbHitP50 != null ? String(Math.round(summary.ttfbHitP50)) : '—'}
+            unit={summary?.ttfbHitP50 != null ? 'ms' : undefined}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 16 }}>
-            {summary?.ttfbHitMs != null || summary?.ttfbMissMs != null ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+            {summary?.ttfbHitP50 != null || summary?.ttfbMissP50 != null ? (
               (() => {
-                const hit = summary?.ttfbHitMs ?? 0;
-                const miss = summary?.ttfbMissMs ?? 0;
-                const scale = Math.max(hit, miss, 1);
+                const hitP50 = summary?.ttfbHitP50 ?? 0;
+                const missP50 = summary?.ttfbMissP50 ?? 0;
+                const scale = Math.max(hitP50, missP50, 1);
                 return (
                   <>
-                    <BarRow
+                    <PercentileCacheBlock
                       label="HIT"
-                      pct={(hit / scale) * 100}
-                      value={summary?.ttfbHitMs != null ? `${Math.round(summary.ttfbHitMs)}ms` : '—'}
+                      count={summary?.ttfbHitCount ?? 0}
+                      p50={summary?.ttfbHitP50 ?? null}
+                      p75={summary?.ttfbHitP75 ?? null}
+                      p99={summary?.ttfbHitP99 ?? null}
+                      pct={(hitP50 / scale) * 100}
                       tone="var(--good)"
-                      labelWidth={64}
                     />
-                    <BarRow
+                    <PercentileCacheBlock
                       label="MISS"
-                      pct={(miss / scale) * 100}
-                      value={summary?.ttfbMissMs != null ? `${Math.round(summary.ttfbMissMs)}ms` : '—'}
+                      count={summary?.ttfbMissCount ?? 0}
+                      p50={summary?.ttfbMissP50 ?? null}
+                      p75={summary?.ttfbMissP75 ?? null}
+                      p99={summary?.ttfbMissP99 ?? null}
+                      pct={(missP50 / scale) * 100}
                       tone="var(--warn)"
-                      labelWidth={64}
                     />
                   </>
                 );
@@ -1281,44 +1479,232 @@ function TelemetryTab({
         </Card>
 
         <Card
-          title="Dwell time"
+          title="Active dwell time"
           aside={
             <span className="mono faint" style={{ fontSize: 11 }}>
-              active bursts
+              AFK filtered
             </span>
           }
         >
           <div style={{ display: 'flex', gap: 26, marginTop: 18 }}>
             <div>
               <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
-                {formatDuration(summary?.dwellP50 ?? null)}
+                {formatDuration(summary?.sessionActiveP50 ?? null)}
               </div>
               <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
-                median burst
+                median active
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
-                {formatDuration(summary?.dwellAvgMs ?? null)}
+              <div className="mono" style={{ fontSize: 20, color: 'rgba(237,237,240,.45)' }}>
+                {formatDuration(summary?.sessionWallP50 ?? null)}
               </div>
               <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
-                avg burst
+                wall clock
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <div
+              style={{
+                height: 6,
+                borderRadius: 3,
+                background: 'rgba(255,255,255,.06)',
+              }}
+            >
+              <div
+                style={{
+                  width: `${attentionPct}%`,
+                  height: 6,
+                  borderRadius: 3,
+                  background: 'var(--accent)',
+                }}
+              />
+            </div>
+            <div
+              className="mono"
+              style={{
+                marginTop: 8,
+                fontSize: 11,
+                color: 'rgba(237,237,240,.35)',
+              }}
+            >
+              {attentionPct !== null
+                ? `${attentionPct.toFixed(0)}% of open time counted as attention`
+                : 'not enough wall-clock samples yet'}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}
+      >
+        <Card
+          title="Session start / end + duration"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              7d
+            </span>
+          }
+        >
+          <div style={{ marginTop: 10, display: 'flex', gap: 26 }}>
+            <div>
+              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+                {summary ? summary.sessions.toLocaleString() : '—'}
+              </div>
+              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+                sessions
+              </div>
+            </div>
+            <div>
+              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+                {formatDuration(summary?.sessionWallP50 ?? null)}
+              </div>
+              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+                median duration
+              </div>
+            </div>
+            <div>
+              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+                {pagesPerSession !== null ? pagesPerSession.toFixed(1) : '—'}
+              </div>
+              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+                pages / session
               </div>
             </div>
           </div>
           <div
-            className="mono"
+            className="mono faint"
+            style={{ fontSize: 10.5, marginTop: 20 }}
+          >
+            distribution by wall-clock duration
+          </div>
+          <div
             style={{
-              marginTop: 14,
-              paddingTop: 12,
-              borderTop: '1px solid rgba(255,255,255,.07)',
-              fontSize: 11,
-              color: 'rgba(237,237,240,.35)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              gap: 6,
+              height: 60,
+              marginTop: 8,
             }}
           >
-            per continuous active burst — pauses on tab-hide/30s idle, not
-            full session length
+            {(summary?.sessionWallDurationBuckets ?? []).map((b) => {
+              const maxCount = Math.max(
+                1,
+                ...(summary?.sessionWallDurationBuckets.map((s) => s.count) ?? [1]),
+              );
+              return (
+                <div
+                  key={b.key}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                  title={`${b.count.toLocaleString()} sessions`}
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      height: `${Math.max(4, (b.count / maxCount) * 44)}px`,
+                      borderRadius: 3,
+                      background: 'rgba(123,92,224,.5)',
+                    }}
+                  />
+                  <span className="mono faint" style={{ fontSize: 9.5 }}>
+                    {b.key}
+                  </span>
+                </div>
+              );
+            })}
           </div>
+        </Card>
+
+        <Card
+          title="Navigation timing"
+          aside={
+            <span className="mono faint" style={{ fontSize: 11 }}>
+              cold nav · load phases · avg over all time
+            </span>
+          }
+        >
+          {navPhases ? (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  height: 10,
+                  borderRadius: 5,
+                  overflow: 'hidden',
+                  marginTop: 14,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${navPhases.dnsPct}%`,
+                    background: 'var(--accent)',
+                  }}
+                />
+                <div
+                  style={{
+                    width: `${navPhases.tcpPct}%`,
+                    background: 'rgba(123,92,224,.72)',
+                  }}
+                />
+                <div
+                  style={{
+                    width: `${navPhases.domPct}%`,
+                    background: 'rgba(123,92,224,.48)',
+                  }}
+                />
+                <div
+                  style={{
+                    width: `${navPhases.completePct}%`,
+                    background: 'rgba(123,92,224,.26)',
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px 18px',
+                  marginTop: 14,
+                }}
+              >
+                {[
+                  ['DNS', `${Math.round(navPhases.dns)}ms`],
+                  ['TCP + TLS', `${Math.round(navPhases.tcp)}ms`],
+                  ['DOM load', `${Math.round(navPhases.dom)}ms`],
+                  ['complete', formatSeconds(navPhases.complete)],
+                ].map(([l, v]) => (
+                  <div
+                    key={l}
+                    className="mono"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: 11.5,
+                      color: 'rgba(237,237,240,.62)',
+                    }}
+                  >
+                    <span>{l}</span>
+                    <span style={{ color: 'var(--text)' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div
+              className="mono faint"
+              style={{ fontSize: 11, marginTop: 16 }}
+            >
+              No cold-navigation samples with load-phase data yet.
+            </div>
+          )}
         </Card>
       </div>
 
@@ -1354,6 +1740,143 @@ function TelemetryTab({
           counted here
         </div>
       </Card>
+
+      <div className="panel" style={{ overflow: 'hidden' }}>
+        <div
+          className="thead"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2.2fr 1.4fr 90px 70px 170px',
+          }}
+        >
+          <span>MESSAGE</span>
+          <span>FILE</span>
+          <span>LINE:COL</span>
+          <span>COUNT</span>
+          <span>LAST SEEN</span>
+        </div>
+        {errorsFailed ? (
+          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+            failed to load errors
+          </div>
+        ) : null}
+        {!errorsFailed && errors && errors.length === 0 ? (
+          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+            No errors recorded.
+          </div>
+        ) : null}
+        {(errors ?? []).map((err) => {
+          const expanded = expandedFingerprint === err.fingerprint;
+          const snapshots = snapshotsByFingerprint[err.fingerprint];
+          return (
+            <div key={err.fingerprint}>
+              <div
+                className="tr row-hover"
+                style={{
+                  gridTemplateColumns: '2.2fr 1.4fr 90px 70px 170px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => toggleErrorRow(err.fingerprint)}
+              >
+                <span
+                  style={{
+                    font: '400 13px var(--sans)',
+                    color: 'rgba(237,237,240,.8)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={err.message}
+                >
+                  {err.message}
+                </span>
+                <span
+                  className="mono faint"
+                  style={{
+                    fontSize: 11,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={err.file ?? undefined}
+                >
+                  {err.file ?? '—'}
+                </span>
+                <span className="mono faint" style={{ fontSize: 11 }}>
+                  {err.line ?? '—'}:{err.col ?? '—'}
+                </span>
+                <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {err.count.toLocaleString()}
+                </span>
+                <span className="mono faint" style={{ fontSize: 11 }}>
+                  {new Date(err.lastSeenAt).toLocaleString()}
+                </span>
+              </div>
+              {expanded ? (
+                <div
+                  style={{
+                    padding: '12px 30px',
+                    borderBottom: '1px solid rgba(255,255,255,.07)',
+                    background: 'rgba(255,255,255,.02)',
+                  }}
+                >
+                  {snapshots === 'loading' ? (
+                    <div className="mono faint" style={{ fontSize: 11 }}>
+                      loading raw snapshots…
+                    </div>
+                  ) : null}
+                  {snapshots === 'failed' ? (
+                    <div className="mono faint" style={{ fontSize: 11 }}>
+                      failed to load raw snapshots
+                    </div>
+                  ) : null}
+                  {Array.isArray(snapshots) && snapshots.length === 0 ? (
+                    <div className="mono faint" style={{ fontSize: 11 }}>
+                      No raw snapshots retained for this fingerprint (current
+                      + previous month only).
+                    </div>
+                  ) : null}
+                  {Array.isArray(snapshots)
+                    ? snapshots.map((s) => (
+                        <div
+                          key={s.id}
+                          style={{
+                            marginBottom: 10,
+                            paddingBottom: 10,
+                            borderBottom: '1px solid rgba(255,255,255,.05)',
+                          }}
+                        >
+                          <div
+                            className="mono faint"
+                            style={{ fontSize: 10.5, marginBottom: 4 }}
+                          >
+                            {new Date(s.receivedAt).toLocaleString()}
+                          </div>
+                          <pre
+                            className="mono"
+                            style={{
+                              fontSize: 11,
+                              margin: 0,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              color: 'rgba(237,237,240,.7)',
+                            }}
+                          >
+                            {JSON.stringify(
+                              { device: s.device, events: s.events },
+                              null,
+                              2,
+                            )}
+                          </pre>
+                        </div>
+                      ))
+                    : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1584,7 +2107,7 @@ export default function DashboardPage() {
       >
         <main style={{ padding: '22px 26px 30px' }}>
           {tab === 'dev' && <DevTab />}
-          {tab === 'post' && <PostDevTab />}
+          {tab === 'post' && <PostDevTab projectId={activeProjectId} />}
           {tab === 'telemetry' && (
             <TelemetryTab
               projectId={activeProjectId}

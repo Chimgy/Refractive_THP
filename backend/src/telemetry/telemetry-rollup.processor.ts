@@ -24,6 +24,7 @@ import {
   scrollKey,
   sessionDurationKey,
   sessionsKey,
+  sessionWallKey,
   ttfbHitKey,
   ttfbKey,
   ttfbMissKey,
@@ -95,26 +96,76 @@ function dedupeSessionDurations(entries: string[]): number[] {
   return Array.from(maxBySession.values());
 }
 
-type ColdNavSample = { country: string; dns: number; tcp: number };
+type ColdNavSample = {
+  country: string;
+  dns: number;
+  tcp: number;
+  domContentLoaded: number | null;
+  loadComplete: number | null;
+};
 
-// navColdKey entries are `${country}:${dns}:${tcp}` — no session-style
-// dedup needed here (unlike session durations above), every sample is
-// independent, just parsed apart into its three fields.
+// navColdKey entries are
+// `${country}:${dns}:${tcp}:${domContentLoaded}:${loadComplete}` — no
+// session-style dedup needed here (unlike session durations above), every
+// sample is independent, just parsed apart into its five fields. The last
+// two are '' (parsed to null) when the vitals event didn't carry them.
 function parseColdNavSamples(entries: string[]): ColdNavSample[] {
   const samples: ColdNavSample[] = [];
   for (const entry of entries) {
     const parts = entry.split(':');
-    if (parts.length !== 3) continue;
-    const [country, dnsRaw, tcpRaw] = parts;
+    if (parts.length !== 5) continue;
+    const [country, dnsRaw, tcpRaw, domRaw, loadRaw] = parts;
     const dns = Number(dnsRaw);
     const tcp = Number(tcpRaw);
     if (!Number.isFinite(dns) || !Number.isFinite(tcp)) continue;
-    samples.push({ country, dns, tcp });
+    const domContentLoaded = domRaw !== '' ? Number(domRaw) : null;
+    const loadComplete = loadRaw !== '' ? Number(loadRaw) : null;
+    samples.push({
+      country,
+      dns,
+      tcp,
+      domContentLoaded:
+        domContentLoaded !== null && Number.isFinite(domContentLoaded)
+          ? domContentLoaded
+          : null,
+      loadComplete:
+        loadComplete !== null && Number.isFinite(loadComplete)
+          ? loadComplete
+          : null,
+    });
   }
   return samples;
 }
 
 const numOrNull = (n: number | null): string | null => n?.toString() ?? null;
+
+// Fixed buckets for the session-duration histogram widget — ordered, not
+// sorted by count, so the chart always reads left-to-right as "shorter to
+// longer" regardless of which buckets actually have samples this window.
+const SESSION_WALL_DURATION_BUCKETS: { key: string; maxMs: number }[] = [
+  { key: '<30s', maxMs: 30_000 },
+  { key: '30s-1m', maxMs: 60_000 },
+  { key: '1-3m', maxMs: 3 * 60_000 },
+  { key: '3-5m', maxMs: 5 * 60_000 },
+  { key: '5-10m', maxMs: 10 * 60_000 },
+  { key: '10m+', maxMs: Infinity },
+];
+
+function bucketSessionWallDurations(
+  values: number[],
+): { key: string; count: number }[] {
+  const counts = new Map(
+    SESSION_WALL_DURATION_BUCKETS.map((b) => [b.key, 0]),
+  );
+  for (const v of values) {
+    const bucket = SESSION_WALL_DURATION_BUCKETS.find((b) => v <= b.maxMs);
+    if (bucket) counts.set(bucket.key, (counts.get(bucket.key) ?? 0) + 1);
+  }
+  return SESSION_WALL_DURATION_BUCKETS.map((b) => ({
+    key: b.key,
+    count: counts.get(b.key) ?? 0,
+  }));
+}
 
 // The metrics engine (external_data.md roadmap item 8 redesign): on a
 // 5-minute cadence, reads the just-closed period's Redis aggregate keys for
@@ -187,6 +238,7 @@ export class TelemetryRollupProcessor
       ttfb: ttfbKey(projectId, period),
       dwell: dwellKey(projectId, period),
       sessionDuration: sessionDurationKey(projectId, period),
+      sessionWall: sessionWallKey(projectId, period),
       lcpCold: lcpColdKey(projectId, period),
       lcpCached: lcpCachedKey(projectId, period),
       navCold: navColdKey(projectId, period),
@@ -209,6 +261,7 @@ export class TelemetryRollupProcessor
       ttfbRaw,
       dwellRaw,
       sessionDurationRaw,
+      sessionWallRaw,
       lcpColdRaw,
       lcpCachedRaw,
       navColdRaw,
@@ -229,6 +282,7 @@ export class TelemetryRollupProcessor
       client.lrange(keys.ttfb, 0, -1),
       client.lrange(keys.dwell, 0, -1),
       client.lrange(keys.sessionDuration, 0, -1),
+      client.lrange(keys.sessionWall, 0, -1),
       client.lrange(keys.lcpCold, 0, -1),
       client.lrange(keys.lcpCached, 0, -1),
       client.lrange(keys.navCold, 0, -1),
@@ -246,11 +300,18 @@ export class TelemetryRollupProcessor
     const ttfbValues = ttfbRaw.map(Number).filter(Number.isFinite);
     const dwellValues = dwellRaw.map(Number).filter(Number.isFinite);
     const sessionDurations = dedupeSessionDurations(sessionDurationRaw);
+    const sessionWallDurations = dedupeSessionDurations(sessionWallRaw);
     const lcpColdValues = lcpColdRaw.map(Number).filter(Number.isFinite);
     const lcpCachedValues = lcpCachedRaw.map(Number).filter(Number.isFinite);
     const coldNavSamples = parseColdNavSamples(navColdRaw);
     const dnsColdValues = coldNavSamples.map((s) => s.dns);
     const tcpColdValues = coldNavSamples.map((s) => s.tcp);
+    const domContentLoadedColdValues = coldNavSamples
+      .map((s) => s.domContentLoaded)
+      .filter((v): v is number => v !== null);
+    const loadCompleteColdValues = coldNavSamples
+      .map((s) => s.loadComplete)
+      .filter((v): v is number => v !== null);
     const ttfbHitValues = ttfbHitRaw.map(Number).filter(Number.isFinite);
     const ttfbMissValues = ttfbMissRaw.map(Number).filter(Number.isFinite);
 
@@ -266,6 +327,7 @@ export class TelemetryRollupProcessor
       ttfbValues.length > 0 ||
       dwellValues.length > 0 ||
       sessionDurations.length > 0 ||
+      sessionWallDurations.length > 0 ||
       lcpColdValues.length > 0 ||
       lcpCachedValues.length > 0 ||
       coldNavSamples.length > 0 ||
@@ -301,6 +363,18 @@ export class TelemetryRollupProcessor
           dwellP50: numOrNull(percentile(dwellValues, 50)),
           sessionDurationAvgMs: numOrNull(average(sessionDurations)),
           sessionDurationP50: numOrNull(percentile(sessionDurations, 50)),
+          sessionWallAvgMs: numOrNull(average(sessionWallDurations)),
+          sessionWallP50: numOrNull(percentile(sessionWallDurations, 50)),
+          sessionWallCount: sessionWallDurations.length,
+          sessionWallDurationBuckets: bucketSessionWallDurations(
+            sessionWallDurations,
+          ),
+          domContentLoadedColdP50: numOrNull(
+            percentile(domContentLoadedColdValues, 50),
+          ),
+          loadCompleteColdP50: numOrNull(
+            percentile(loadCompleteColdValues, 50),
+          ),
           dnsColdP50: numOrNull(percentile(dnsColdValues, 50)),
           dnsColdP75: numOrNull(percentile(dnsColdValues, 75)),
           dnsColdP99: numOrNull(percentile(dnsColdValues, 99)),

@@ -100,6 +100,8 @@ import { TelemetryUniquesService } from './telemetry-uniques.service';
     TelemetryUniquesService,
     TelemetryMetricsQueryService,
     CloudflareZoneLinkService,
+    TelemetryErrorsService,
+    TelemetrySnapshotsService,
   ],
 })
 export class TelemetryModule {}

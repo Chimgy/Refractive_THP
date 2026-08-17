@@ -66,9 +66,14 @@ export const lcpColdKey = (projectId: string, period: string) =>
 export const lcpCachedKey = (projectId: string, period: string) =>
   prefix('lcp_cached', projectId, period);
 // Cold DNS/TCP samples (vitals.tcp > 0) — entries are
-// `${country}:${dns}:${tcp}`, same composite-string-in-one-list idiom as
-// sessionDurationKey below, so a per-period key count doesn't scale with the
-// number of countries seen.
+// `${country}:${dns}:${tcp}:${domContentLoaded}:${loadComplete}` (the last
+// two empty-string when the vitals event didn't carry them), same
+// composite-string-in-one-list idiom as sessionDurationKey below, so a
+// per-period key count doesn't scale with the number of countries seen.
+// domContentLoaded/loadComplete are only meaningful alongside a cold nav
+// (they're wall-clock-from-navigation-start milestones, and a reused
+// connection's dns/tcp are near-zero by definition anyway), so they ride
+// along on this key rather than getting one of their own.
 export const navColdKey = (projectId: string, period: string) =>
   prefix('nav_cold', projectId, period);
 // Reused connections (vitals.tcp === 0) — country-tagged counter only, no ms
@@ -84,9 +89,19 @@ export const ttfbHitKey = (projectId: string, period: string) =>
   prefix('ttfb_hit', projectId, period);
 export const ttfbMissKey = (projectId: string, period: string) =>
   prefix('ttfb_miss', projectId, period);
-// Entries are `${sessionId}:${durationMs}` — session_end can fire more than
-// once per session per period (external_data.md section 1's documented
-// tab-hide quirk), so rollup groups by sessionId and takes the max before
-// computing a percentile over per-session durations, not raw fires.
+// Entries are `${sessionId}:${activeMs}` (activeMs preferred over durationMs
+// — see telemetry-aggregation.service.ts's session_end handling) — despite
+// the key/column name, this is *active* time, not wall-clock session
+// length. session_end can fire more than once per session per period
+// (external_data.md section 1's documented tab-hide quirk), so rollup
+// groups by sessionId and takes the max before computing a percentile over
+// per-session durations, not raw fires.
 export const sessionDurationKey = (projectId: string, period: string) =>
   prefix('session_duration', projectId, period);
+// True wall-clock session length — `${sessionId}:${durationMs}`, same
+// dedupe-by-max-per-session shape as sessionDurationKey above, but always
+// populated from durationMs (Date.now() - startedAt) regardless of whether
+// activeMs is present. Kept as a separate key/column rather than folded into
+// sessionDurationKey so neither number silently overwrites the other.
+export const sessionWallKey = (projectId: string, period: string) =>
+  prefix('session_wall', projectId, period);

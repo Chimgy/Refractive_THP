@@ -17,7 +17,7 @@ const SOURCE = 'cloudflare';
 type HttpRequestsGroup = {
   count: number;
   sum: { originResponseDurationMs: number };
-  dimensions: { cacheStatus: string };
+  dimensions: { cacheStatus: string; edgeResponseStatus: number };
 };
 
 type HttpRequestsQueryResult = {
@@ -57,7 +57,7 @@ const QUERY = `
         ) {
           count
           sum { originResponseDurationMs }
-          dimensions { cacheStatus }
+          dimensions { cacheStatus edgeResponseStatus }
         }
       }
     }
@@ -65,6 +65,19 @@ const QUERY = `
 `;
 
 const numOrNull = (n: number | null): string | null => n?.toString() ?? null;
+
+// edgeResponseStatus isn't Cloudflare-plan-gated (unlike coloCode/
+// edgeTimeToFirstByteMs, see this file's top comment), so status-class
+// counts are real from day one. Bucketed to response class, not stored
+// per-code — the dashboard only needs 2xx/3xx/4xx/5xx, not a 20-column
+// breakdown per status.
+function statusBucket(status: number): '2xx' | '3xx' | '4xx' | '5xx' | null {
+  if (status >= 200 && status < 300) return '2xx';
+  if (status >= 300 && status < 400) return '3xx';
+  if (status >= 400 && status < 500) return '4xx';
+  if (status >= 500 && status < 600) return '5xx';
+  return null;
+}
 
 // Pulls real per-status request counts and origin-only response time from
 // Cloudflare's GraphQL Analytics API (httpRequestsAdaptiveGroups) into
@@ -140,6 +153,10 @@ export class TelemetryCloudflarePullProcessor
     let missCount = 0;
     let originSum = 0;
     let originCount = 0;
+    let status2xxCount = 0;
+    let status3xxCount = 0;
+    let status4xxCount = 0;
+    let status5xxCount = 0;
 
     for (const group of groups) {
       if (group.dimensions.cacheStatus === 'hit') {
@@ -149,6 +166,21 @@ export class TelemetryCloudflarePullProcessor
       }
       originSum += group.sum.originResponseDurationMs;
       originCount += group.count;
+
+      switch (statusBucket(group.dimensions.edgeResponseStatus)) {
+        case '2xx':
+          status2xxCount += group.count;
+          break;
+        case '3xx':
+          status3xxCount += group.count;
+          break;
+        case '4xx':
+          status4xxCount += group.count;
+          break;
+        case '5xx':
+          status5xxCount += group.count;
+          break;
+      }
     }
 
     await this.edgeLogs.upsert(
@@ -168,6 +200,10 @@ export class TelemetryCloudflarePullProcessor
           originCount > 0 ? originSum / originCount : null,
         ),
         edgeLocations: [],
+        status2xxCount,
+        status3xxCount,
+        status4xxCount,
+        status5xxCount,
       },
       ['projectId', 'periodStart', 'source'],
     );

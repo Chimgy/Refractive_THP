@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createHash } from 'crypto';
 import { Repository } from 'typeorm';
 import { TelemetryErrorFingerprint } from './entities/telemetry-error-fingerprint.entity';
+import { fingerprint } from './telemetry-fingerprint.util';
 
 type TalliedError = {
   message: string;
@@ -11,17 +11,6 @@ type TalliedError = {
   col: number | null;
   occurrences: number;
 };
-
-function fingerprint(
-  message: string,
-  file: string | null,
-  line: number | null,
-  col: number | null,
-): string {
-  return createHash('sha256')
-    .update(`${message}:${file ?? ''}:${line ?? ''}:${col ?? ''}`)
-    .digest('hex');
-}
 
 @Injectable()
 export class TelemetryErrorsService {
@@ -68,6 +57,18 @@ export class TelemetryErrorsService {
         this.upsert(meta.projectId, fp, e),
       ),
     );
+  }
+
+  async list(
+    projectId: string,
+    { page, limit }: { page: number; limit: number },
+  ): Promise<TelemetryErrorFingerprint[]> {
+    return this.errors.find({
+      where: { projectId },
+      order: { lastSeenAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
   }
 
   private async upsert(

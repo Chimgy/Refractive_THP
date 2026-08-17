@@ -73,6 +73,23 @@ export class EdgeLogMetric {
   @Column({ type: 'jsonb', default: () => "'[]'" })
   edgeLocations: { key: string; count: number }[];
 
+  // Real edge-observed HTTP status counts, bucketed to the response class —
+  // Cloudflare's edgeResponseStatus dimension, unlike coloCode/
+  // edgeTimeToFirstByteMs (see TelemetryCloudflarePullProcessor's top
+  // comment), is NOT plan-gated, so this is real data from day one, not a
+  // stub waiting on a paid zone.
+  @Column({ type: 'int', default: 0 })
+  status2xxCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  status3xxCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  status4xxCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  status5xxCount: number;
+
   @CreateDateColumn()
   createdAt: Date;
 }

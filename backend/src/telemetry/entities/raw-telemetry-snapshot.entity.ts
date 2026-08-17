@@ -38,6 +38,13 @@ export class RawTelemetrySnapshot {
   @Column({ type: 'varchar', nullable: true })
   userAgent: string | null;
 
+  // Correlation key back to telemetry_error_fingerprints — same sha256 hash
+  // (telemetry-fingerprint.util.ts), one per distinct error event this
+  // snapshot's payload contains. Null (not empty array) when the batch had
+  // no error events, keeping the GIN index small.
+  @Column({ type: 'text', array: true, nullable: true })
+  errorFingerprints: string[] | null;
+
   @CreateDateColumn()
   receivedAt: Date;
 }

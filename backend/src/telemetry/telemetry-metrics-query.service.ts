@@ -21,6 +21,10 @@ export type TelemetrySummary = {
   pageViewsDeltaPct: number | null;
   sessions: number;
   sessionsDeltaPct: number | null;
+  // Despite the name, this is active session time (activeMs), not
+  // wall-clock session length — see sdk-telemetry-metric.entity.ts's
+  // sessionDurationAvgMs comment. Kept as-is for existing readers;
+  // sessionWallAvgMs below is the true wall-clock figure.
   avgSessionMs: number | null;
   avgSessionDeltaMs: number | null;
   events24h: number;
@@ -40,14 +44,38 @@ export type TelemetrySummary = {
   ttfbP99: number | null;
   dwellAvgMs: number | null;
   dwellP50: number | null;
-  // Cold-connection DNS/TCP and cache-status-split LCP — see
-  // sdk-telemetry-metric.entity.ts for what "cold" means for each.
+  // Median active session time — same source column as avgSessionMs
+  // (sessionDurationP50, folded the same unweighted way as dwellP50) but a
+  // median rather than a mean, so it pairs correctly against sessionWallP50
+  // below for the "active vs wall clock" widget.
+  sessionActiveP50: number | null;
+  // True wall-clock session length (session_end's durationMs) — distinct
+  // from avgSessionMs/sessionActiveP50 above, which are actually active
+  // time despite the name (see sdk-telemetry-metric.entity.ts's
+  // sessionDurationAvgMs comment). sessionWallCount is the number of
+  // sessions this folds, for callers that want to know how much signal
+  // backs it.
+  sessionWallAvgMs: number | null;
+  sessionWallDeltaMs: number | null;
+  sessionWallP50: number | null;
+  sessionWallCount: number;
+  // Fixed-order distribution (see SESSION_WALL_DURATION_BUCKETS in
+  // telemetry-rollup.processor.ts) — always all buckets, zero-filled, same
+  // "every milestone present" convention as scrollDepth below.
+  sessionWallDurationBuckets: TelemetryBreakdownEntry[];
+  // Cold-connection DNS/TCP, cache-status-split LCP, and load-phase
+  // milestones — see sdk-telemetry-metric.entity.ts for what "cold" means
+  // for each.
   dnsColdP50: number | null;
   dnsColdP75: number | null;
   dnsColdP99: number | null;
   tcpColdP50: number | null;
   tcpColdP75: number | null;
   tcpColdP99: number | null;
+  // Wall-clock-from-navigation-start milestones, cold samples only, P50
+  // only (single-number-per-phase display, not a percentile spread).
+  domContentLoadedColdP50: number | null;
+  loadCompleteColdP50: number | null;
   navColdCountries: TelemetryBreakdownEntry[];
   navReusedCountries: TelemetryBreakdownEntry[];
   lcpColdP50: number | null;
@@ -56,19 +84,36 @@ export type TelemetrySummary = {
   lcpCachedP50: number | null;
   lcpCachedP75: number | null;
   lcpCachedP99: number | null;
-  // Real per-visitor TTFB HIT/MISS (p75) — sourced from sdk_telemetry_metrics'
-  // ttfbHitP75/ttfbMissP75 (client-measured, labeled via the Server-Timing
-  // Transform Rule — see sdk-telemetry-metric.entity.ts), not from
-  // edgelog_metrics: Cloudflare's GraphQL edgeTimeToFirstByteMs field turned
-  // out to require a Pro plan, so that path never had real ms to give.
-  ttfbHitMs: number | null;
-  ttfbMissMs: number | null;
+  // Real per-visitor TTFB HIT/MISS, full percentile spread — sourced from
+  // sdk_telemetry_metrics' ttfbHit*/ttfbMiss* columns (client-measured,
+  // labeled via the Server-Timing Transform Rule — see
+  // sdk-telemetry-metric.entity.ts), not from edgelog_metrics: Cloudflare's
+  // GraphQL edgeTimeToFirstByteMs field turned out to require a Pro plan, so
+  // that path never had real ms to give.
+  ttfbHitP50: number | null;
+  ttfbHitP75: number | null;
+  ttfbHitP99: number | null;
+  ttfbHitCount: number;
+  ttfbMissP50: number | null;
+  ttfbMissP75: number | null;
+  ttfbMissP99: number | null;
+  ttfbMissCount: number;
   // These two ARE from edgelog_metrics (Cloudflare zone link) — null when
   // the project has no linked zone, same "absent, not fabricated" convention
   // as every other field here. Zone-wide context the embed script can't
   // produce (origin-only latency, traffic that never ran the script).
   originResponseAvgMs: number | null;
   edgeLocations: TelemetryBreakdownEntry[];
+  // Real edge-observed request counts from Cloudflare (edgelog_metrics) —
+  // cache hit ratio and 2xx/3xx/4xx/5xx mix for the "Post development" tab.
+  // Zero, not null, when a project has a linked zone but zero traffic;
+  // null-vs-zero only matters for the averages above, not sums.
+  cacheHitCount: number;
+  cacheMissCount: number;
+  status2xxCount: number;
+  status3xxCount: number;
+  status4xxCount: number;
+  status5xxCount: number;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -194,6 +239,35 @@ function mergeEdgeLocations(rows: EdgeLogMetric[]): TelemetryBreakdownEntry[] {
 
 const SCROLL_MILESTONES = [25, 50, 75, 100];
 
+// Same fixed order as SESSION_WALL_DURATION_BUCKETS in
+// telemetry-rollup.processor.ts — kept as a separate literal here rather
+// than imported, same precedent as SCROLL_MILESTONES/deviceCategory above
+// (the query layer and the write layer are allowed to know this shape
+// independently, as long as the key strings match).
+const SESSION_WALL_DURATION_BUCKET_ORDER = [
+  '<30s',
+  '30s-1m',
+  '1-3m',
+  '3-5m',
+  '5-10m',
+  '10m+',
+];
+
+function mergeSessionWallDurationBuckets(
+  rows: SdkTelemetryMetric[],
+): TelemetryBreakdownEntry[] {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    for (const entry of row.sessionWallDurationBuckets) {
+      totals.set(entry.key, (totals.get(entry.key) ?? 0) + entry.count);
+    }
+  }
+  return SESSION_WALL_DURATION_BUCKET_ORDER.map((key) => ({
+    key,
+    count: totals.get(key) ?? 0,
+  }));
+}
+
 // Milestones as % of page views (matches the "% OF VIEWS" semantics
 // MetricsPage.tsx already documents), not a top-N ranking — every milestone
 // is always present, zero-filled, rather than only whichever ones happened
@@ -216,7 +290,7 @@ function buildScrollDepth(
   }));
 }
 
-type UnweightedColumn = 'dwellAvgMs' | 'dwellP50';
+type UnweightedColumn = 'dwellAvgMs' | 'dwellP50' | 'sessionDurationP50';
 
 // Mean of each period's own value, unweighted — kept for dwell (and
 // sessionDurationAvgMs above, computed separately) since neither has a
@@ -305,6 +379,17 @@ export class TelemetryMetricsQueryService {
         .filter((v): v is number => v !== null),
     );
 
+    const sessionWallAvgMs = weightedAverage(
+      currentRows,
+      (r) => r.sessionWallAvgMs,
+      (r) => r.sessionWallCount,
+    );
+    const previousSessionWallAvgMs = weightedAverage(
+      previousRows,
+      (r) => r.sessionWallAvgMs,
+      (r) => r.sessionWallCount,
+    );
+
     return {
       projectId,
       days,
@@ -342,12 +427,23 @@ export class TelemetryMetricsQueryService {
       ttfbP99: weightedAverage(currentRows, (r) => r.ttfbP99, (r) => r.ttfbCount),
       dwellAvgMs: averageColumn(currentRows, 'dwellAvgMs'),
       dwellP50: averageColumn(currentRows, 'dwellP50'),
+      sessionActiveP50: averageColumn(currentRows, 'sessionDurationP50'),
+      sessionWallAvgMs,
+      sessionWallDeltaMs:
+        sessionWallAvgMs !== null && previousSessionWallAvgMs !== null
+          ? sessionWallAvgMs - previousSessionWallAvgMs
+          : null,
+      sessionWallP50: weightedAverage(currentRows, (r) => r.sessionWallP50, (r) => r.sessionWallCount),
+      sessionWallCount: sumBy(currentRows, (r) => r.sessionWallCount),
+      sessionWallDurationBuckets: mergeSessionWallDurationBuckets(currentRows),
       dnsColdP50: weightedAverage(currentRows, (r) => r.dnsColdP50, (r) => r.navColdCount),
       dnsColdP75: weightedAverage(currentRows, (r) => r.dnsColdP75, (r) => r.navColdCount),
       dnsColdP99: weightedAverage(currentRows, (r) => r.dnsColdP99, (r) => r.navColdCount),
       tcpColdP50: weightedAverage(currentRows, (r) => r.tcpColdP50, (r) => r.navColdCount),
       tcpColdP75: weightedAverage(currentRows, (r) => r.tcpColdP75, (r) => r.navColdCount),
       tcpColdP99: weightedAverage(currentRows, (r) => r.tcpColdP99, (r) => r.navColdCount),
+      domContentLoadedColdP50: weightedAverage(currentRows, (r) => r.domContentLoadedColdP50, (r) => r.navColdCount),
+      loadCompleteColdP50: weightedAverage(currentRows, (r) => r.loadCompleteColdP50, (r) => r.navColdCount),
       navColdCountries: mergeTopEntries(currentRows, 'navColdCountries', 20),
       navReusedCountries: mergeTopEntries(currentRows, 'navReusedCountries', 20),
       lcpColdP50: weightedAverage(currentRows, (r) => r.lcpColdP50, (r) => r.lcpColdCount),
@@ -356,14 +452,26 @@ export class TelemetryMetricsQueryService {
       lcpCachedP50: weightedAverage(currentRows, (r) => r.lcpCachedP50, (r) => r.lcpCachedCount),
       lcpCachedP75: weightedAverage(currentRows, (r) => r.lcpCachedP75, (r) => r.lcpCachedCount),
       lcpCachedP99: weightedAverage(currentRows, (r) => r.lcpCachedP99, (r) => r.lcpCachedCount),
-      ttfbHitMs: weightedAverage(currentRows, (r) => r.ttfbHitP75, (r) => r.ttfbHitCount),
-      ttfbMissMs: weightedAverage(currentRows, (r) => r.ttfbMissP75, (r) => r.ttfbMissCount),
+      ttfbHitP50: weightedAverage(currentRows, (r) => r.ttfbHitP50, (r) => r.ttfbHitCount),
+      ttfbHitP75: weightedAverage(currentRows, (r) => r.ttfbHitP75, (r) => r.ttfbHitCount),
+      ttfbHitP99: weightedAverage(currentRows, (r) => r.ttfbHitP99, (r) => r.ttfbHitCount),
+      ttfbHitCount: sumBy(currentRows, (r) => r.ttfbHitCount),
+      ttfbMissP50: weightedAverage(currentRows, (r) => r.ttfbMissP50, (r) => r.ttfbMissCount),
+      ttfbMissP75: weightedAverage(currentRows, (r) => r.ttfbMissP75, (r) => r.ttfbMissCount),
+      ttfbMissP99: weightedAverage(currentRows, (r) => r.ttfbMissP99, (r) => r.ttfbMissCount),
+      ttfbMissCount: sumBy(currentRows, (r) => r.ttfbMissCount),
       originResponseAvgMs: weightedAverage(
         edgeLogRows,
         (r) => r.originResponseAvgMs,
         (r) => r.cacheHitCount + r.cacheMissCount,
       ),
       edgeLocations: mergeEdgeLocations(edgeLogRows),
+      cacheHitCount: sumBy(edgeLogRows, (r) => r.cacheHitCount),
+      cacheMissCount: sumBy(edgeLogRows, (r) => r.cacheMissCount),
+      status2xxCount: sumBy(edgeLogRows, (r) => r.status2xxCount),
+      status3xxCount: sumBy(edgeLogRows, (r) => r.status3xxCount),
+      status4xxCount: sumBy(edgeLogRows, (r) => r.status4xxCount),
+      status5xxCount: sumBy(edgeLogRows, (r) => r.status5xxCount),
     };
   }
 }

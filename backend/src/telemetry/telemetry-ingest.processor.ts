@@ -63,7 +63,6 @@ export class TelemetryIngestProcessor extends WorkerHost {
       ],
       ['uniques', this.uniques.recordVisit({ projectId, ip, userAgent })],
       ['errors', this.errors.recordBatch(payload, { projectId })],
-      ['country', this.aggregation.recordCountry({ projectId, country })],
     ];
 
     const results = await Promise.allSettled(destinations.map(([, p]) => p));

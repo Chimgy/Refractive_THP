@@ -18,6 +18,7 @@ import {
   scrollKey,
   sessionDurationKey,
   sessionsKey,
+  sessionWallKey,
   ttfbHitKey,
   ttfbKey,
   ttfbMissKey,
@@ -126,6 +127,13 @@ export class TelemetryAggregationService {
         if (locale) {
           bump(localesKey(meta.projectId, period), locale);
         }
+        // Same once-per-session reasoning as device/locale above — was
+        // previously bumped once per batch (recordCountry, called on every
+        // ingest job regardless of content), which counted repeat flushes
+        // from the same visit rather than visits themselves.
+        if (meta.country) {
+          bump(countriesKey(meta.projectId, period), meta.country);
+        }
       } else if (type === 'session_end' && sessionId) {
         // Prefer activeMs (cumulative dwell — excludes hidden/idle time,
         // see telemetry-script.ts) over raw wall-clock durationMs. This is
@@ -150,6 +158,19 @@ export class TelemetryAggregationService {
           listPushes.push({
             key: sessionDurationKey(meta.projectId, period),
             value: `${sessionId}:${value}`,
+          });
+        }
+        // True wall-clock length, pushed independently of the activeMs
+        // preference above — durationMs is sent on every session_end
+        // regardless of whether activeMs is also present, so this doesn't
+        // need the same fallback logic.
+        if (
+          typeof e.durationMs === 'number' &&
+          e.durationMs <= MAX_SESSION_DURATION_MS
+        ) {
+          listPushes.push({
+            key: sessionWallKey(meta.projectId, period),
+            value: `${sessionId}:${e.durationMs}`,
           });
         }
       } else if (type === 'vitals') {
@@ -214,9 +235,24 @@ export class TelemetryAggregationService {
           if (e.navReused === true) {
             bump(navReusedKey(meta.projectId, period), meta.country ?? 'unknown');
           } else if (e.navReused === false) {
+            // domContentLoaded/loadComplete ride along on the same sample
+            // (see navColdKey's comment) rather than getting their own key —
+            // empty string when the vitals event didn't carry them, parsed
+            // back out as "not available" at rollup rather than a fabricated
+            // 0.
+            const domContentLoaded =
+              typeof e.domContentLoaded === 'number' &&
+              e.domContentLoaded <= MAX_NAV_TIMING_MS
+                ? e.domContentLoaded
+                : '';
+            const loadComplete =
+              typeof e.loadComplete === 'number' &&
+              e.loadComplete <= MAX_NAV_TIMING_MS
+                ? e.loadComplete
+                : '';
             listPushes.push({
               key: navColdKey(meta.projectId, period),
-              value: `${meta.country ?? 'unknown'}:${e.dns}:${e.tcp}`,
+              value: `${meta.country ?? 'unknown'}:${e.dns}:${e.tcp}:${domContentLoaded}:${loadComplete}`,
             });
           }
         }
@@ -254,21 +290,5 @@ export class TelemetryAggregationService {
     }
 
     await Promise.all(writes);
-  }
-
-  // Request-level, not per-event — CF-IPCountry describes the connection
-  // the whole batch arrived on (same reasoning as TelemetryUniquesService).
-  async recordCountry(meta: {
-    projectId: string;
-    country: string | null;
-  }): Promise<void> {
-    if (!meta.country) return;
-    const period = periodKey(new Date());
-    await this.redis.hincrbyWithExpire(
-      countriesKey(meta.projectId, period),
-      meta.country,
-      1,
-      PERIOD_TTL_SECONDS,
-    );
   }
 }
