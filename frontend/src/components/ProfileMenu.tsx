@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../theme/ThemeContext';
 
 type Props = {
   pendingConnections?: number;
@@ -29,6 +30,7 @@ export default function ProfileMenu({
   onSignOut,
 }: Props) {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const name = user?.displayName || user?.email || 'Signed out';
   const email = user?.email ?? '';
   const role = (user?.role ?? 'member').toUpperCase();
@@ -130,13 +132,18 @@ export default function ProfileMenu({
           </div>
 
           <div className="menu-group">
-            <button type="button" className="menu-item" role="menuitem">
+            <button
+              type="button"
+              className="menu-item"
+              role="menuitem"
+              onClick={toggleTheme}
+            >
               Theme
               <span
                 className="mono"
                 style={{ fontSize: 10, color: 'var(--faint)' }}
               >
-                DARK
+                {theme.toUpperCase()}
               </span>
             </button>
             <button

@@ -9,17 +9,20 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import LoginPage from './pages/LoginPage';
 import ProjectsPage from './pages/ProjectsPage';
 import SignupPage from './pages/SignupPage';
+import { ThemeProvider } from './theme/ThemeContext';
 import './styles/portal.css';
 import MetricsPage from './pages/MetricsPage';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <RouteTracker />
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <RouteTracker />
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

@@ -388,6 +388,92 @@
   padding: 20px 22px;
 }
 
+/* Compact form controls — rule builder, widget config */
+.select {
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
+  font: 500 13px var(--sans);
+  color: var(--text);
+}
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.input-compact {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+.toggle-pill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  font: 500 12px var(--sans);
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+.toggle-pill:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.toggle-pill-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+/* Dashboard grid */
+.grid-resize-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  touch-action: none;
+  border-right: 2px solid var(--border-strong);
+  border-bottom: 2px solid var(--border-strong);
+  border-bottom-right-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.grid-resize-handle:hover {
+  border-color: var(--accent);
+}
+.grid-tile:hover > .grid-resize-handle {
+  opacity: 1;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Deliberately absurd — grid tiles set their own inline z-index while
+     dragging/resizing, and this must always paint above every one of them
+     no matter what, so it's never worth reasoning about the exact number. */
+  z-index: 999999;
+  padding: 24px;
+}
+.modal-panel {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(720px, 90vh);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+.modal-panel-expanded {
+  max-width: min(1180px, 96vw);
+  min-height: min(780px, 88vh);
+  max-height: 96vh;
+}
+
 .note {
   margin-top: 14px;
   padding: 14px 16px;
