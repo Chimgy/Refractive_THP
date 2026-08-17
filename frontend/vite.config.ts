@@ -7,6 +7,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Requests arrive with Host: demo.chimgy.net through the Cloudflare
+    // tunnel — Vite's dev server rejects unrecognized Host headers by
+    // default (DNS rebinding protection).
+    allowedHosts: ['demo.chimgy.net'],
     // Docker Desktop's bind mount doesn't forward native fs events from
     // Windows into the container, so chokidar's default watcher never
     // fires on save — poll instead.

@@ -1,4 +1,5 @@
 services:
+  # CUSTOMER PLATFORM:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -15,6 +16,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks: [customer-net]
 
   redis:
     image: redis:7-alpine
@@ -28,6 +30,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks: [customer-net]
 
   backend:
     build: ./backend
@@ -52,16 +55,22 @@ services:
       REDIS_PORT: 6379
       REDIS_TLS: 'false'
       AUTH_CACHE_TTL_SECONDS: 300
-      CORS_ORIGIN: http://localhost:5173
+      CORS_ORIGIN: 'http://localhost:5173,https://demo.chimgy.net'
       REFRESH_TOKEN_COOKIE_NAME: thp_refresh_token
       COOKIE_DOMAIN: ''
       TELEMETRY_HASH_SECRET: ${TELEMETRY_HASH_SECRET}
       CLOUDFLARE_TOKEN_ENC_KEY: ${CLOUDFLARE_TOKEN_ENC_KEY}
+      # Consumed by the AddInternalReadonlyRole migration — sets the password
+      # on the least-privilege role internal-backend's hourly pull connects
+      # as (see backend/src/database/migrations/1786840100000-*). Same value
+      # as internal-backend's CUSTOMER_DB_PASSWORD below.
+      INTERNAL_READONLY_DB_PASSWORD: ${INTERNAL_READONLY_DB_PASSWORD}
     ports:
       - '3000:3000'
     volumes:
       - ./backend:/app
       - /app/node_modules
+    networks: [customer-net]
 
   frontend:
     build: ./frontend
@@ -75,25 +84,118 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks: [customer-net]
+
+  # INTERNAL ADMIN PLATFORM:
+
+  internal-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: internal_thp
+    ports:
+      - '5433:5432'
+    volumes:
+      - internal_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks: [internal-net]
+
+  internal-backend:
+    build: ./internal-backend
+    restart: unless-stopped
+    depends_on:
+      internal-postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      DB_HOST: internal-postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: internal_thp
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD}
+      # Read-only, scheduled-pull connection into the CUSTOMER platform's own
+      # postgres (a different database on customer-net — see the extra
+      # network entry below) via the least-privilege role
+      # AddInternalReadonlyRole provisions there. Not the same as
+      # DB_HOST/DB_* above, which is internal-backend's own internal-postgres.
+      CUSTOMER_DB_HOST: postgres
+      CUSTOMER_DB_PORT: 5432
+      CUSTOMER_DB_USERNAME: internal_readonly
+      CUSTOMER_DB_PASSWORD: ${INTERNAL_READONLY_DB_PASSWORD}
+      CUSTOMER_DB_NAME: refractive_thp
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./internal-backend:/app
+      - /app/node_modules
+    # internal-net for internal-frontend + zero-trust isolation; customer-net
+    # ADDED so this container can reach `postgres` by service name for the
+    # read-only ingestion pull — internal-backend is otherwise still fully
+    # isolated from the customer stack (no other customer-net service talks
+    # to it, and it only ever connects out to postgres, never accepts
+    # inbound from customer-net).
+    networks: [internal-net, customer-net]
+
+  internal-frontend:
+    build: ./internal-frontend
+    restart: unless-stopped
+    depends_on:
+      - internal-backend
+    environment:
+      VITE_API_PROXY_TARGET: http://internal-backend:3001
+    ports:
+      - '5174:5173'
+    volumes:
+      - ./internal-frontend:/app
+      - /app/node_modules
+    networks: [internal-net]
 
   # Public tunnel to `backend` for THP_analytics.js — an embed script on a
   # third-party site can't reach `localhost`, so this exposes the local dev
-  # backend at a stable public URL. Named Cloudflare Tunnel, not ngrok — the
-  # ngrok free tier serves its own browser-warning interstitial in place of
-  # the real response on every request, and a bare `<script src>` tag can't
-  # attach the header that bypasses it, so it can never work for this case.
-  # Needs CLOUDFLARE_TUNNEL_TOKEN in a root .env (see .env.example) — same
-  # value works on any machine, so `docker compose up cloudflared` gets you
-  # the same embed URL on a new laptop. Hostname routing (which public
-  # hostname points at this tunnel) is configured in the Cloudflare Zero
-  # Trust dashboard, not here.
+  # backend at a stable public URL. (REMOVE LATER JUST FOR DEV)
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     command: tunnel run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - backend
+    networks: [customer-net]
+
+  internal-cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token ${INTERNAL_CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - internal-frontend
+    networks: [internal-net]
+
+  # Public tunnel to `frontend` at demo.chimgy.net, for showing the customer
+  # platform to people who aren't on this machine. Reaches `frontend:5173`
+  # over customer-net; the frontend's own Vite proxy forwards /api calls to
+  # `backend:3000` container-to-container, so nothing else needs a public
+  # hostname for the demo to work end to end.
+  demo-cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token ${FRONTEND_DEMO_CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - frontend
+    networks: [customer-net]
+
+networks:
+  customer-net:
+  internal-net:
 
 volumes:
   postgres_data:
   redis_data:
+  internal_postgres_data:

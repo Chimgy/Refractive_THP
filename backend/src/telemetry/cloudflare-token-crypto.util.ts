@@ -45,8 +45,7 @@ export function decryptCloudflareToken(
   const encrypted = combined.subarray(0, combined.length - 16);
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'base64'));
   decipher.setAuthTag(authTag);
-  return Buffer.concat([
-    decipher.update(encrypted),
-    decipher.final(),
-  ]).toString('utf8');
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
+    'utf8',
+  );
 }

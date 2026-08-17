@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 // Correlation key from raw_telemetry_snapshots back to
 // telemetry_error_fingerprints — populated at ingest time in
@@ -13,16 +13,23 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 // `CREATE TABLE ... PARTITION OF ...` (telemetry-snapshot-partition.service.ts),
 // existing and future.
 export class AddErrorFingerprintsToRawTelemetrySnapshots1786810000000 implements MigrationInterface {
-    name = 'AddErrorFingerprintsToRawTelemetrySnapshots1786810000000'
+  name = 'AddErrorFingerprintsToRawTelemetrySnapshots1786810000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "raw_telemetry_snapshots" ADD "errorFingerprints" text array`);
-        await queryRunner.query(`CREATE INDEX "IDX_raw_telemetry_snapshots_error_fingerprints" ON "raw_telemetry_snapshots" USING GIN ("errorFingerprints")`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "raw_telemetry_snapshots" ADD "errorFingerprints" text array`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_raw_telemetry_snapshots_error_fingerprints" ON "raw_telemetry_snapshots" USING GIN ("errorFingerprints")`,
+    );
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP INDEX "public"."IDX_raw_telemetry_snapshots_error_fingerprints"`);
-        await queryRunner.query(`ALTER TABLE "raw_telemetry_snapshots" DROP COLUMN "errorFingerprints"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_raw_telemetry_snapshots_error_fingerprints"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "raw_telemetry_snapshots" DROP COLUMN "errorFingerprints"`,
+    );
+  }
 }

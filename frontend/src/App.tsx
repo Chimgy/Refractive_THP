@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import RouteTracker from './analytics/RouteTracker';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import DashboardPage from './pages/DashboardPage';
 import DocsPage from './pages/DocsPage';
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <RouteTracker />
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

@@ -2,13 +2,15 @@
   "name": "refractive-thp",
   "version": "0.0.0",
   "private": true,
-  "description": "Root tooling for the backend and frontend packages",
+  "description": "Root tooling for the backend, internal-backend, frontend, and internal-frontend packages",
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix internal-backend && npm run lint --prefix frontend && npm run lint --prefix internal-frontend",
     "lint:backend": "npm run lint --prefix backend",
-    "lint:frontend": "npm run lint --prefix frontend"
+    "lint:internal-backend": "npm run lint --prefix internal-backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "lint:internal-frontend": "npm run lint --prefix internal-frontend"
   },
   "devDependencies": {
     "prettier": "^3.4.2"

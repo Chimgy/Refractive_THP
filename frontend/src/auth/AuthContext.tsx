@@ -8,6 +8,7 @@ import {
 } from 'react';
 import * as authApi from '../api/auth';
 import { ApiError, refreshSession } from '../api/client';
+import { trackEvent } from '../api/usageAnalytics';
 import { clearTokens, setTokens } from './tokenStore';
 
 export type SessionUser = {
@@ -89,14 +90,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTokens({ accessToken: result.accessToken });
         setUser(fromSafeUser(result.user));
         setStatus('authenticated');
+        trackEvent('login', 'auth.login');
       },
       async register(payload) {
         const result = await authApi.register(payload);
         setTokens({ accessToken: result.accessToken });
         setUser(fromSafeUser(result.user));
         setStatus('authenticated');
+        trackEvent('login', 'auth.register');
       },
       async logout() {
+        // Fired before clearTokens() below — trackEvent reads the current
+        // access token synchronously at call time, so ordering here matters:
+        // once clearTokens() runs, a subsequent call would go out
+        // unauthenticated and get silently dropped (401, swallowed).
+        trackEvent('logout', 'auth.logout');
         await authApi.logout().catch(() => undefined);
         clearTokens();
         setUser(null);

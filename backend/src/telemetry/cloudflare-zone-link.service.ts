@@ -9,7 +9,11 @@ import {
   encryptCloudflareToken,
 } from './cloudflare-token-crypto.util';
 
-export type LinkedZone = { projectId: string; zoneId: string; apiToken: string };
+export type LinkedZone = {
+  projectId: string;
+  zoneId: string;
+  apiToken: string;
+};
 
 // Same "insecure default + loud warning" shape as
 // TelemetryUniquesService's TELEMETRY_HASH_SECRET handling — a fixed dev

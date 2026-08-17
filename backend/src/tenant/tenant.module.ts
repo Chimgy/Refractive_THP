@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CompaniesModule } from '../companies/companies.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { UsageAnalyticsModule } from '../usage-analytics/usage-analytics.module';
 
 // Aggregates every tenant-facing module for DI purposes. The `/api/tenant`
 // prefix itself is applied per-module in AppModule's RouterModule.register()
@@ -9,6 +10,6 @@ import { ProjectsModule } from '../projects/projects.module';
 // tenant-facing modules get added to both places, not imported directly
 // into AppModule.
 @Module({
-  imports: [CompaniesModule, ProjectsModule],
+  imports: [CompaniesModule, ProjectsModule, UsageAnalyticsModule],
 })
 export class TenantModule {}

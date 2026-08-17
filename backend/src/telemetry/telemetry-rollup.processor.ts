@@ -154,9 +154,7 @@ const SESSION_WALL_DURATION_BUCKETS: { key: string; maxMs: number }[] = [
 function bucketSessionWallDurations(
   values: number[],
 ): { key: string; count: number }[] {
-  const counts = new Map(
-    SESSION_WALL_DURATION_BUCKETS.map((b) => [b.key, 0]),
-  );
+  const counts = new Map(SESSION_WALL_DURATION_BUCKETS.map((b) => [b.key, 0]));
   for (const v of values) {
     const bucket = SESSION_WALL_DURATION_BUCKETS.find((b) => v <= b.maxMs);
     if (bucket) counts.set(bucket.key, (counts.get(bucket.key) ?? 0) + 1);
@@ -366,9 +364,8 @@ export class TelemetryRollupProcessor
           sessionWallAvgMs: numOrNull(average(sessionWallDurations)),
           sessionWallP50: numOrNull(percentile(sessionWallDurations, 50)),
           sessionWallCount: sessionWallDurations.length,
-          sessionWallDurationBuckets: bucketSessionWallDurations(
-            sessionWallDurations,
-          ),
+          sessionWallDurationBuckets:
+            bucketSessionWallDurations(sessionWallDurations),
           domContentLoadedColdP50: numOrNull(
             percentile(domContentLoadedColdValues, 50),
           ),
@@ -382,9 +379,7 @@ export class TelemetryRollupProcessor
           tcpColdP75: numOrNull(percentile(tcpColdValues, 75)),
           tcpColdP99: numOrNull(percentile(tcpColdValues, 99)),
           navColdCount: coldNavSamples.length,
-          navColdCountries: countEntries(
-            coldNavSamples.map((s) => s.country),
-          ),
+          navColdCountries: countEntries(coldNavSamples.map((s) => s.country)),
           navReusedCountries: topEntries(navReused),
           lcpColdP50: numOrNull(percentile(lcpColdValues, 50)),
           lcpColdP75: numOrNull(percentile(lcpColdValues, 75)),

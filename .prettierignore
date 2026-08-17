@@ -1,5 +1,8 @@
 backend/dist
 backend/coverage
+internal-backend/dist
+internal-backend/coverage
 frontend/dist
+internal-frontend/dist
 package-lock.json
 .claude/

@@ -206,9 +206,7 @@ export class TelemetryAggregationService {
           // clean hit/miss (dynamic, expired, stale, bypass, ...) is left
           // out of both buckets rather than mislabeled into one.
           const ttfbCache =
-            typeof e.ttfbCache === 'string'
-              ? e.ttfbCache.toLowerCase()
-              : null;
+            typeof e.ttfbCache === 'string' ? e.ttfbCache.toLowerCase() : null;
           if (ttfbCache === 'hit') {
             listPushes.push({
               key: ttfbHitKey(meta.projectId, period),
@@ -233,7 +231,10 @@ export class TelemetryAggregationService {
           e.tcp <= MAX_NAV_TIMING_MS
         ) {
           if (e.navReused === true) {
-            bump(navReusedKey(meta.projectId, period), meta.country ?? 'unknown');
+            bump(
+              navReusedKey(meta.projectId, period),
+              meta.country ?? 'unknown',
+            );
           } else if (e.navReused === false) {
             // domContentLoaded/loadComplete ride along on the same sample
             // (see navColdKey's comment) rather than getting their own key —

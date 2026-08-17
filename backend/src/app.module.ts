@@ -7,13 +7,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
-import { InternalModule } from './internal/internal.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RedisModule } from './redis/redis.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { dataSourceOptions } from './database/data-source';
 import { TenantModule } from './tenant/tenant.module';
+import { UsageAnalyticsModule } from './usage-analytics/usage-analytics.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -53,18 +53,19 @@ import { UsersModule } from './users/users.module';
     RefreshTokensModule,
     AuthModule,
     TenantModule,
-    InternalModule,
     TelemetryModule,
     // Auth silo needs no prefix (AuthController is already `/api/auth/*`).
-    // Tenant/Internal silos get their prefix applied here, at the module
-    // boundary, so the silo IS the module boundary — the seam needed to
-    // later extract one into its own deployable.
+    // Tenant silo gets its prefix applied here, at the module boundary, so
+    // the silo IS the module boundary — the seam needed to later extract it
+    // into its own deployable. The internal/admin silo lives entirely in
+    // the separate `internal-backend` app now (see docker-compose.yml), not
+    // as a module here.
     //
-    // TelemetryModule is a fourth silo, deliberately left out of
+    // TelemetryModule is a second silo, deliberately left out of
     // RouterModule.register below and out of the global `api` prefix
     // entirely (see main.ts) — its routes (GET /THP_analytics.js,
     // POST /telemetry) are embedded in third-party HTML and can't be
-    // versioned or moved the way tenant/internal routes can.
+    // versioned or moved the way tenant routes can.
     //
     // RouterModule only tags the exact module class(es) listed — it does NOT
     // walk a module's own `imports` — so every module that actually declares
@@ -77,9 +78,8 @@ import { UsersModule } from './users/users.module';
       {
         path: 'tenant',
         module: TenantModule,
-        children: [CompaniesModule, ProjectsModule],
+        children: [CompaniesModule, ProjectsModule, UsageAnalyticsModule],
       },
-      { path: 'internal', module: InternalModule },
     ]),
   ],
   controllers: [AppController],

@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  },
+  // Same rationale as backend/tsconfig.json — Docker Desktop on Windows
+  // doesn't reliably forward inotify events across the bind mount
+  // (docker-compose.yml's `./internal-backend:/app`), so tsc's default
+  // watch mode can silently stop seeing host-side file changes. Polling
+  // instead of relying on filesystem events fixes that at the cost of a
+  // small, fixed CPU overhead.
+  "watchOptions": {
+    "watchFile": "priorityPollingInterval",
+    "watchDirectory": "dynamicPriorityPolling",
+    "fallbackPolling": "dynamicPriority"
+  }
+}
