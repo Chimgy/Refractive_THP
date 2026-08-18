@@ -24,7 +24,7 @@ const SALT_ROUNDS = 10;
 export type AuthResult = {
   accessToken: string;
   refreshToken: string;
-  user: SafeUser;
+  user: SafeUser & { companyName: string | null };
 };
 export type RefreshResult = { accessToken: string; refreshToken: string };
 
@@ -121,7 +121,12 @@ export class AuthService {
     const { token: refreshToken } = await this.refreshTokensService.issue(
       user.id,
     );
-    return { accessToken, refreshToken, user: toSafeUser(user) };
+    const company = await this.companiesService.findById(user.companyId);
+    return {
+      accessToken,
+      refreshToken,
+      user: { ...toSafeUser(user), companyName: company?.name ?? null },
+    };
   }
 
   private signAccessToken(user: User): string {

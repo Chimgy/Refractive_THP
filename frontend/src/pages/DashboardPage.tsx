@@ -18,6 +18,7 @@ import SiteHeader from '../components/SiteHeader';
 import WorldMap, { countryName } from '../components/WorldMap';
 import { BarRow, BigStat, VisualHead } from './MetricsPage';
 import CustomDash1Tab from './customDash1/CustomDash1Tab';
+import CustomDora1Tab from './customDora1/CustomDora1Tab';
 import {
   connections as mockConnections,
   deploymentSeries,
@@ -30,13 +31,14 @@ import {
 
 type ConnectionEntry = { name: string; status: 'CONNECTED' | 'CONNECT' };
 
-type Tab = 'dev' | 'post' | 'telemetry' | 'customDash1' | 'connections';
+type Tab = 'dev' | 'post' | 'telemetry' | 'customDash1' | 'customDora1' | 'connections';
 
 const tabs: { id: Tab; label: string }[] = [
   { id: 'dev', label: 'In development' },
   { id: 'post', label: 'Post development' },
   { id: 'telemetry', label: 'Telemetry' },
-  { id: 'customDash1', label: 'Custom Dashboard 1' },
+  { id: 'customDash1', label: 'Custom Telemetry Dashboard 1' },
+  { id: 'customDora1', label: 'Custom DORA Dashboard 1' },
   { id: 'connections', label: 'Connections' },
 ];
 
@@ -2054,6 +2056,7 @@ export default function DashboardPage() {
     >
       <SiteHeader
         project={{
+          id: activeProjectId,
           name: project?.name ?? activeProjectId,
           subtitle: project
             ? (project.allowedOrigins[0] ?? 'no origin configured')
@@ -2096,7 +2099,7 @@ export default function DashboardPage() {
           className="mono faint"
           style={{ marginLeft: 'auto', fontSize: 11 }}
         >
-          snapshot 14:00 · hourly poll
+          Polled in 5 minute Intervals
         </span>
       </div>
 
@@ -2118,6 +2121,12 @@ export default function DashboardPage() {
           )}
           {tab === 'customDash1' && (
             <CustomDash1Tab
+              projectId={activeProjectId}
+              refreshNonce={refreshNonce}
+            />
+          )}
+          {tab === 'customDora1' && (
+            <CustomDora1Tab
               projectId={activeProjectId}
               refreshNonce={refreshNonce}
             />

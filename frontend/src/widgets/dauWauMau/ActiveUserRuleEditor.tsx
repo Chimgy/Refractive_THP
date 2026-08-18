@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   COMPARATORS,
   EVENT_TYPES,
@@ -116,7 +117,7 @@ export default function ActiveUserRuleEditor({
     [draft, draftSeries, onSave],
   );
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
       <div
         className="panel modal-panel"
@@ -219,7 +220,8 @@ export default function ActiveUserRuleEditor({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

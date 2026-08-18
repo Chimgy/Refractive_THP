@@ -1,8 +1,7 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-// Shared between AppModule's TypeOrmModule.forRoot() and the TypeORM CLI
-// (migration:generate/run/revert need a concrete DataSource, not Nest's
-// factory-based config) — keeping one definition means the app and the CLI
+// Shared between AppModule's TypeOrmModule.forRoot()
+// keeping one definition means the app and the CLI
 // can never see a different schema/connection than each other.
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',

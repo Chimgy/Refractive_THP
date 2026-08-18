@@ -8,16 +8,19 @@ export type SafeUser = {
   email: string;
   role: UserRole;
   companyId: string;
+  companyName: string | null;
   displayName: string | null;
   isActive: boolean;
 };
 
-// Shape returned by /auth/me — the JWT-validated user (see JwtStrategy).
+// Shape returned by /auth/me — the JWT-validated user (see JwtStrategy),
+// plus companyName looked up server-side from the companies table.
 export type AuthenticatedUser = {
   userId: string;
   email: string;
   role: UserRole;
   companyId: string;
+  companyName: string | null;
   displayName: string | null;
 };
 

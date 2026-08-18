@@ -16,6 +16,7 @@ export type SessionUser = {
   email: string;
   role: authApi.UserRole;
   companyId: string;
+  companyName: string | null;
   displayName: string | null;
 };
 
@@ -42,6 +43,7 @@ function fromSafeUser(user: authApi.SafeUser): SessionUser {
     email: user.email,
     role: user.role,
     companyId: user.companyId,
+    companyName: user.companyName,
     displayName: user.displayName,
   };
 }
@@ -52,6 +54,7 @@ function fromAuthenticatedUser(user: authApi.AuthenticatedUser): SessionUser {
     email: user.email,
     role: user.role,
     companyId: user.companyId,
+    companyName: user.companyName,
     displayName: user.displayName,
   };
 }

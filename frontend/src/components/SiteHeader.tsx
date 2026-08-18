@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import ProfileMenu from './ProfileMenu';
+import ProjectSwitcher from './ProjectSwitcher';
 
 const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'How it works', to: '/how-it-works' },
@@ -11,14 +12,15 @@ const NAV_LINKS: { label: string; to: string }[] = [
 
 type Props = {
   subtitle?: string;
-  project?: { name: string; subtitle: string };
+  project?: { id: string; name: string; subtitle: string };
   actions?: ReactNode;
 };
 
 export default function SiteHeader({ subtitle, project, actions }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { status, logout } = useAuth();
+  const { status, user, logout } = useAuth();
+  const brandName = user?.companyName || 'THP Portal';
 
   const onBrand = () =>
     navigate(status === 'authenticated' ? '/projects' : '/login');
@@ -41,22 +43,12 @@ export default function SiteHeader({ subtitle, project, actions }: Props) {
           <span
             style={{ font: '600 13px var(--sans)', letterSpacing: '-0.01em' }}
           >
-            THP Portal
+            {brandName}
           </span>
         </button>
         {project && (
           <>
-            <button
-              type="button"
-              className="btn"
-              style={{ height: 30, gap: 8 }}
-              onClick={() => navigate('/projects')}
-            >
-              {project.name}
-              <span className="mono faint" style={{ fontSize: 10 }}>
-                ⌄
-              </span>
-            </button>
+            <ProjectSwitcher activeProjectId={project.id} label={project.name} />
             <span className="mono faint" style={{ fontSize: 11.5 }}>
               {project.subtitle}
             </span>

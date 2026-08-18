@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { CompaniesService } from '../companies/companies.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { LoginDto } from './dto/login.dto';
@@ -28,6 +29,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly refreshCookieService: RefreshCookieService,
+    private readonly companiesService: CompaniesService,
   ) {}
 
   @Post('register')
@@ -102,7 +104,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    const company = await this.companiesService.findById(user.companyId);
+    return { ...user, companyName: company?.name ?? null };
   }
 }

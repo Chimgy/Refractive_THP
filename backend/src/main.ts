@@ -27,6 +27,16 @@ async function bootstrap() {
   // regardless of declared content-type; the controller JSON.parses it.
   app.use('/telemetry', express.text({ type: '*/*', limit: '64kb' }));
 
+  // GitHub's webhook signature (X-Hub-Signature-256) is computed over the
+  // exact raw bytes GitHub sent — parsed-then-reserialized JSON isn't
+  // guaranteed to match byte-for-byte, so the body has to stay a raw Buffer
+  // all the way to GithubWebhookController, which verifies it before doing
+  // its own JSON.parse.
+  app.use(
+    '/github/webhook',
+    express.raw({ type: 'application/json', limit: '1mb' }),
+  );
+
   const configService = app.get(ConfigService);
   const corsOrigins = configService
     .get<string>('CORS_ORIGIN', 'http://localhost:5173')
@@ -57,6 +67,7 @@ async function bootstrap() {
     exclude: [
       { path: 'THP_analytics.js', method: RequestMethod.GET },
       { path: 'telemetry', method: RequestMethod.POST },
+      { path: 'github/webhook', method: RequestMethod.POST },
     ],
   });
   app.useGlobalPipes(

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { COMPARATORS, SESSION_TIME_UNITS, type Comparator, type SessionTimeUnit } from '../dauWauMau/activeUserRules';
 import {
   COHORT_TYPE_OPTIONS,
@@ -52,7 +53,7 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
     [cohortWeeks, cohortType, selectedEntities, basis, onSave],
   );
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
       <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -216,6 +217,7 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

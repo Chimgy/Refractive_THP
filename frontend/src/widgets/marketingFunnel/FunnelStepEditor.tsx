@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   FEATURE_OPTIONS,
   FUNNEL_STEP_TYPE_OPTIONS,
@@ -51,7 +52,7 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
 
   const handleSave = useCallback(() => onSave(steps), [steps, onSave]);
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
       <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -204,6 +205,7 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

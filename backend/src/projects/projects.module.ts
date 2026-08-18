@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompaniesModule } from '../companies/companies.module';
+import { GithubModule } from '../github-dora/github.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { UsersModule } from '../users/users.module';
 import { Project } from './entities/project.entity';
@@ -17,6 +18,7 @@ import { ProjectsService } from './projects.service';
     UsersModule,
     CompaniesModule,
     TelemetryModule,
+    GithubModule,
   ],
   controllers: [ProjectsController],
   providers: [ProjectsService],

@@ -22,6 +22,8 @@ import RetentionWidget from '../../widgets/retention/RetentionWidget';
 import { defaultRetentionConfig } from '../../widgets/retention/config';
 import MarketingFunnelWidget from '../../widgets/marketingFunnel/MarketingFunnelWidget';
 import { defaultMarketingFunnelConfig } from '../../widgets/marketingFunnel/config';
+import GithubActivityWidget from '../../widgets/githubActivity/GithubActivityWidget';
+import '../../widgets/githubActivity/config';
 import type { DashboardWidgetInstance } from '../../widgets/dashboardWidgetTypes';
 import { BarRow, BigStat, VisualHead } from '../MetricsPage';
 
@@ -171,11 +173,21 @@ export default function CustomDash1Tab({
               dragHandleProps={dragHandleProps}
             />
           );
+        case 'github_activity':
+          return (
+            <GithubActivityWidget
+              instance={widget}
+              projectId={projectId}
+              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
+              onRemove={handleRemoveWidget}
+              dragHandleProps={dragHandleProps}
+            />
+          );
         default:
           return null;
       }
     },
-    [handleUpdateWidget, handleDuplicateWidget, handleRemoveWidget],
+    [handleUpdateWidget, handleDuplicateWidget, handleRemoveWidget, projectId],
   );
 
   return (
@@ -183,7 +195,7 @@ export default function CustomDash1Tab({
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span className="card-title" style={{ fontSize: 15 }}>
-            Custom Dashboard 1
+            Custom Telemetry Dashboard 1
           </span>
           <span className="mono faint" style={{ fontSize: 10.5 }}>
             drag a header to reposition · drag a corner to resize

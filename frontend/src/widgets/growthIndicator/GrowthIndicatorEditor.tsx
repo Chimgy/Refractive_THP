@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { INTERVAL_OPTIONS, type GrowthIndicatorConfig, type GrowthSegment } from './config';
 
 const SEGMENT_OPTIONS: { key: GrowthSegment; label: string }[] = [
@@ -35,7 +36,7 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
     [interval, periods, dormantAfterWeeks, visibleSegments, onSave],
   );
 
-  return (
+  return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
       <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -146,6 +147,7 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
