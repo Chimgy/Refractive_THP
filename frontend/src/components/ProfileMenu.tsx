@@ -6,7 +6,6 @@ type Props = {
   pendingConnections?: number;
   sessionExpiry?: string;
   version?: string;
-  onHowItWorks?: () => void;
   onSignOut?: () => void;
 };
 
@@ -26,7 +25,6 @@ export default function ProfileMenu({
   pendingConnections = 0,
   sessionExpiry,
   version = 'v0.4.1',
-  onHowItWorks,
   onSignOut,
 }: Props) {
   const { user } = useAuth();
@@ -144,23 +142,6 @@ export default function ProfileMenu({
                 style={{ fontSize: 10, color: 'var(--faint)' }}
               >
                 {theme.toUpperCase()}
-              </span>
-            </button>
-            <button
-              type="button"
-              className="menu-item"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onHowItWorks?.();
-              }}
-            >
-              How it works
-              <span
-                className="mono"
-                style={{ fontSize: 11, color: 'rgba(237,237,240,.3)' }}
-              >
-                ↗
               </span>
             </button>
           </div>

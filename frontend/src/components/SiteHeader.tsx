@@ -5,7 +5,6 @@ import ProfileMenu from './ProfileMenu';
 import ProjectSwitcher from './ProjectSwitcher';
 
 const NAV_LINKS: { label: string; to: string }[] = [
-  { label: 'How it works', to: '/how-it-works' },
   { label: 'Metrics', to: '/metrics' },
   { label: 'Docs', to: '/docs' },
 ];
@@ -85,7 +84,6 @@ export default function SiteHeader({ subtitle, project, actions }: Props) {
         {actions}
         {status === 'authenticated' ? (
           <ProfileMenu
-            onHowItWorks={() => navigate('/how-it-works')}
             onSignOut={() => {
               void logout().then(() => navigate('/login'));
             }}
