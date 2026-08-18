@@ -10,9 +10,19 @@ import { GithubRestClientService } from './github-rest-client.service';
 import { GithubWebhookController } from './github-webhook.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([GithubRepoLink, GithubCommit])],
-    controllers: [GithubWebhookController],
-    providers: [GithubJwtService, GithubInstallationTokenService, GithubRestClientService, GithubRepoLinkService, GithubCommitService],
-    exports: [GithubRestClientService, GithubRepoLinkService, GithubCommitService],
+  imports: [TypeOrmModule.forFeature([GithubRepoLink, GithubCommit])],
+  controllers: [GithubWebhookController],
+  providers: [
+    GithubJwtService,
+    GithubInstallationTokenService,
+    GithubRestClientService,
+    GithubRepoLinkService,
+    GithubCommitService,
+  ],
+  exports: [
+    GithubRestClientService,
+    GithubRepoLinkService,
+    GithubCommitService,
+  ],
 })
 export class GithubModule {}

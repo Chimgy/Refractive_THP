@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 // report before auth resolves. Both are read-only-pulled by internal-backend
 // hourly via a dedicated least-privilege role (see
 // AddInternalReadonlyRole1786840100000, the migration right after this one).
-export class AddUsageAnalyticsTables1786840000000
-  implements MigrationInterface
-{
+export class AddUsageAnalyticsTables1786840000000 implements MigrationInterface {
   name = 'AddUsageAnalyticsTables1786840000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

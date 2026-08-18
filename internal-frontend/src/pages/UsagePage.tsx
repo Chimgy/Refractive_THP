@@ -15,7 +15,9 @@ export default function UsagePage() {
   useEffect(() => {
     getUsageMetrics()
       .then(setSummary)
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : String(err)),
+      );
   }, []);
 
   return (
@@ -42,7 +44,10 @@ export default function UsagePage() {
               Today's events
             </h2>
             <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-              <MetricCard label="Total events" value={summary.today.totalEvents} />
+              <MetricCard
+                label="Total events"
+                value={summary.today.totalEvents}
+              />
               <MetricCard
                 label="Actions / active user"
                 value={summary.today.actionsPerUser ?? '—'}

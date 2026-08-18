@@ -133,7 +133,12 @@ export default function WidgetShell({
         </div>
 
         <div
-          style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 'none' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flex: 'none',
+          }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           {headerExtra}

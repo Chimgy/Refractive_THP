@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { INTERVAL_OPTIONS, type GrowthIndicatorConfig, type GrowthSegment } from './config';
+import {
+  INTERVAL_OPTIONS,
+  type GrowthIndicatorConfig,
+  type GrowthSegment,
+} from './config';
 
 const SEGMENT_OPTIONS: { key: GrowthSegment; label: string }[] = [
   { key: 'new', label: 'New' },
@@ -15,10 +19,16 @@ type Props = {
   onSave: (next: Partial<GrowthIndicatorConfig>) => void;
 };
 
-export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props) {
+export default function GrowthIndicatorEditor({
+  value,
+  onCancel,
+  onSave,
+}: Props) {
   const [interval, setInterval] = useState(value.interval);
   const [periods, setPeriods] = useState(value.periods);
-  const [dormantAfterWeeks, setDormantAfterWeeks] = useState(value.dormantAfterWeeks);
+  const [dormantAfterWeeks, setDormantAfterWeeks] = useState(
+    value.dormantAfterWeeks,
+  );
   const [visibleSegments, setVisibleSegments] = useState(value.visibleSegments);
 
   const toggleSegment = useCallback((key: GrowthSegment) => {
@@ -38,18 +48,28 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
 
   return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
-      <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+      <div
+        className="panel modal-panel"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <span className="card-title">Edit widget</span>
           <div className="mono faint" style={{ marginTop: 4, fontSize: 10.5 }}>
-            Choose which segments appear, the time interval, and what counts
-            as dormant.
+            Choose which segments appear, the time interval, and what counts as
+            dormant.
           </div>
         </div>
 
         <div style={{ padding: '16px 20px', overflow: 'auto', flex: 1 }}>
           <div className="label">Segments shown</div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          <div
+            style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}
+          >
             {SEGMENT_OPTIONS.map((s) => (
               <button
                 key={s.key}
@@ -69,7 +89,9 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
             className="select"
             style={{ marginTop: 10 }}
             value={interval}
-            onChange={(e) => setInterval(e.target.value as GrowthIndicatorConfig['interval'])}
+            onChange={(e) =>
+              setInterval(e.target.value as GrowthIndicatorConfig['interval'])
+            }
           >
             {INTERVAL_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -94,7 +116,14 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
           <div className="label" style={{ marginTop: 20 }}>
             Dormant threshold
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 10,
+            }}
+          >
             <span className="mono faint" style={{ fontSize: 11 }}>
               hasn't been active for
             </span>
@@ -122,7 +151,12 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
             }}
             title="IP-based identification isn't legally usable for anonymous visitors, so this widget only covers logged-in users."
           >
-            <input type="checkbox" checked disabled style={{ width: 16, height: 16, flex: 'none' }} />
+            <input
+              type="checkbox"
+              checked
+              disabled
+              style={{ width: 16, height: 16, flex: 'none' }}
+            />
             <span className="mono faint" style={{ fontSize: 11 }}>
               Logged-in users only — IP collection isn't legal for anonymous
               visitors
@@ -142,7 +176,11 @@ export default function GrowthIndicatorEditor({ value, onCancel, onSave }: Props
           <button type="button" className="btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSave}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+          >
             Save
           </button>
         </div>

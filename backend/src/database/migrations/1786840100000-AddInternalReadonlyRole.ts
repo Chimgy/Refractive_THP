@@ -14,9 +14,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 // here). Roles are cluster-wide, not per-database, so CREATE ROLE is guarded
 // by an existence check to stay idempotent if this ever needs to re-run
 // against an existing cluster.
-export class AddInternalReadonlyRole1786840100000
-  implements MigrationInterface
-{
+export class AddInternalReadonlyRole1786840100000 implements MigrationInterface {
   name = 'AddInternalReadonlyRole1786840100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -42,7 +40,9 @@ export class AddInternalReadonlyRole1786840100000
     await queryRunner.query(
       `GRANT CONNECT ON DATABASE "${queryRunner.connection.options.database as string}" TO internal_readonly`,
     );
-    await queryRunner.query(`GRANT USAGE ON SCHEMA public TO internal_readonly`);
+    await queryRunner.query(
+      `GRANT USAGE ON SCHEMA public TO internal_readonly`,
+    );
     await queryRunner.query(
       `GRANT SELECT ON "usage_events", "rum_events" TO internal_readonly`,
     );

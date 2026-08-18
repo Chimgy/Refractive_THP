@@ -15,9 +15,7 @@ type Props = {
 export default function ProjectSwitcher({ activeProjectId, label }: Props) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [projects, setProjects] = useState<projectsApi.Project[] | null>(
-    null,
-  );
+  const [projects, setProjects] = useState<projectsApi.Project[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 

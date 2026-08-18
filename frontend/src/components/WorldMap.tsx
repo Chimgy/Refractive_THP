@@ -1,9 +1,6 @@
 import { geoNaturalEarth1, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
-import type {
-  GeometryCollection,
-  Topology,
-} from 'topojson-specification';
+import type { GeometryCollection, Topology } from 'topojson-specification';
 // Vite bundles this as a plain JSON asset (~100KB) — see
 // tsconfig.app.json's resolveJsonModule. Natural Earth data via the
 // topojson maintainers' `world-atlas` package (ISC license, public domain
@@ -23,7 +20,10 @@ const countries = feature(
 );
 
 const NUMERIC_TO_NAME = new Map(
-  countries.features.map((f) => [String(f.id), f.properties?.name ?? String(f.id)]),
+  countries.features.map((f) => [
+    String(f.id),
+    f.properties?.name ?? String(f.id),
+  ]),
 );
 
 // Display name for a `countries` breakdown key (alpha-2, or one of

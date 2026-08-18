@@ -51,17 +51,24 @@ type Props<TInstance extends WidgetInstance<unknown>> = {
   onLayoutChange: (widgets: TInstance[]) => void;
   columns?: number;
   getConstraints?: (widget: TInstance) => WidgetConstraints;
-  renderWidget: (widget: TInstance, dragHandleProps: DragHandleProps) => ReactNode;
+  renderWidget: (
+    widget: TInstance,
+    dragHandleProps: DragHandleProps,
+  ) => ReactNode;
 };
 
 function collides(a: GridLayout, b: GridLayout): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  return (
+    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+  );
 }
 
 // CSS Grid does the actual pixel-perfect snapping — dragging/resizing just
 // needs to resolve to integer (x, y, w, h) cell coordinates and write them
 // back.
-export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>({
+export default function DashboardGrid<
+  TInstance extends WidgetInstance<unknown>,
+>({
   widgets,
   onLayoutChange,
   columns = 12,
@@ -78,47 +85,56 @@ export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>
     [widgets],
   );
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    const drag = dragRef.current;
-    if (!drag) return;
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
 
-    if (drag.mode === 'move') {
-      const dxCells = Math.round((e.clientX - drag.startClientX) / drag.cellWidth);
-      const dyCells = Math.round((e.clientY - drag.startClientY) / ROW_HEIGHT);
-      const nextX = Math.min(
-        Math.max(0, drag.origLayout.x + dxCells),
-        Math.max(0, drag.columns - drag.origLayout.w),
+      if (drag.mode === 'move') {
+        const dxCells = Math.round(
+          (e.clientX - drag.startClientX) / drag.cellWidth,
+        );
+        const dyCells = Math.round(
+          (e.clientY - drag.startClientY) / ROW_HEIGHT,
+        );
+        const nextX = Math.min(
+          Math.max(0, drag.origLayout.x + dxCells),
+          Math.max(0, drag.columns - drag.origLayout.w),
+        );
+        const nextY = Math.max(0, drag.origLayout.y + dyCells);
+        const next = { ...drag.origLayout, x: nextX, y: nextY };
+        drag.preview = next;
+        setPreviewLayout(next);
+        return;
+      }
+
+      // Resize: grow/shrink w/h from the origin corner, clamped to this
+      // widget's min/max, the column count, and — if the candidate size would
+      // overlap a neighbor — the last size that didn't. That gives the usual
+      // "grows until it hits something" feel without needing real packing.
+      const dwCells = Math.round(
+        (e.clientX - drag.startClientX) / drag.cellWidth,
       );
-      const nextY = Math.max(0, drag.origLayout.y + dyCells);
-      const next = { ...drag.origLayout, x: nextX, y: nextY };
-      drag.preview = next;
-      setPreviewLayout(next);
-      return;
-    }
+      const dhCells = Math.round((e.clientY - drag.startClientY) / ROW_HEIGHT);
+      const candidateW = Math.min(
+        Math.max(drag.constraints.minW, drag.origLayout.w + dwCells),
+        Math.min(drag.constraints.maxW, drag.columns - drag.origLayout.x),
+      );
+      const candidateH = Math.max(
+        drag.constraints.minH,
+        Math.min(drag.constraints.maxH, drag.origLayout.h + dhCells),
+      );
+      const candidate = { ...drag.origLayout, w: candidateW, h: candidateH };
 
-    // Resize: grow/shrink w/h from the origin corner, clamped to this
-    // widget's min/max, the column count, and — if the candidate size would
-    // overlap a neighbor — the last size that didn't. That gives the usual
-    // "grows until it hits something" feel without needing real packing.
-    const dwCells = Math.round((e.clientX - drag.startClientX) / drag.cellWidth);
-    const dhCells = Math.round((e.clientY - drag.startClientY) / ROW_HEIGHT);
-    const candidateW = Math.min(
-      Math.max(drag.constraints.minW, drag.origLayout.w + dwCells),
-      Math.min(drag.constraints.maxW, drag.columns - drag.origLayout.x),
-    );
-    const candidateH = Math.max(
-      drag.constraints.minH,
-      Math.min(drag.constraints.maxH, drag.origLayout.h + dhCells),
-    );
-    const candidate = { ...drag.origLayout, w: candidateW, h: candidateH };
-
-    const others = widgets.filter((w) => w.id !== drag.id);
-    const blocked = others.some((w) => collides(candidate, w.layout));
-    if (!blocked) {
-      drag.preview = candidate;
-      setPreviewLayout(candidate);
-    }
-  }, [widgets]);
+      const others = widgets.filter((w) => w.id !== drag.id);
+      const blocked = others.some((w) => collides(candidate, w.layout));
+      if (!blocked) {
+        drag.preview = candidate;
+        setPreviewLayout(candidate);
+      }
+    },
+    [widgets],
+  );
 
   const handlePointerUp = useCallback(() => {
     const drag = dragRef.current;
@@ -134,7 +150,9 @@ export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>
     const target = drag.preview;
 
     if (drag.mode === 'resize') {
-      onLayoutChange(widgets.map((w) => (w.id === drag.id ? { ...w, layout: target } : w)));
+      onLayoutChange(
+        widgets.map((w) => (w.id === drag.id ? { ...w, layout: target } : w)),
+      );
       return;
     }
 
@@ -147,7 +165,9 @@ export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>
 
     let next: TInstance[];
     if (overlapping.length === 0) {
-      next = widgets.map((w) => (w.id === drag.id ? { ...w, layout: target } : w));
+      next = widgets.map((w) =>
+        w.id === drag.id ? { ...w, layout: target } : w,
+      );
     } else if (overlapping.length === 1) {
       const other = overlapping[0];
       next = widgets.map((w) => {
@@ -162,31 +182,32 @@ export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>
   }, [widgets, onLayoutChange, handlePointerMove]);
 
   const beginDrag = useCallback(
-    (widget: TInstance, mode: DragMode) => (e: ReactPointerEvent<HTMLElement>) => {
-      e.stopPropagation();
-      const container = containerRef.current;
-      if (!container) return;
-      const containerWidth = container.clientWidth;
-      const cellWidth = (containerWidth - GAP * (columns - 1)) / columns;
-      const constraints = getConstraints?.(widget) ?? DEFAULT_CONSTRAINTS;
+    (widget: TInstance, mode: DragMode) =>
+      (e: ReactPointerEvent<HTMLElement>) => {
+        e.stopPropagation();
+        const container = containerRef.current;
+        if (!container) return;
+        const containerWidth = container.clientWidth;
+        const cellWidth = (containerWidth - GAP * (columns - 1)) / columns;
+        const constraints = getConstraints?.(widget) ?? DEFAULT_CONSTRAINTS;
 
-      dragRef.current = {
-        mode,
-        id: widget.id,
-        pointerId: e.pointerId,
-        startClientX: e.clientX,
-        startClientY: e.clientY,
-        origLayout: widget.layout,
-        cellWidth,
-        columns,
-        constraints,
-        preview: widget.layout,
-      };
-      setDraggingId(widget.id);
-      setPreviewLayout(widget.layout);
-      document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp, { once: true });
-    },
+        dragRef.current = {
+          mode,
+          id: widget.id,
+          pointerId: e.pointerId,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
+          origLayout: widget.layout,
+          cellWidth,
+          columns,
+          constraints,
+          preview: widget.layout,
+        };
+        setDraggingId(widget.id);
+        setPreviewLayout(widget.layout);
+        document.addEventListener('pointermove', handlePointerMove);
+        document.addEventListener('pointerup', handlePointerUp, { once: true });
+      },
     [columns, getConstraints, handlePointerMove, handlePointerUp],
   );
 
@@ -235,7 +256,10 @@ export default function DashboardGrid<TInstance extends WidgetInstance<unknown>>
               zIndex: dragging ? 10 : 1,
             }}
           >
-            <WidgetErrorBoundary widgetTitle={widget.title} onRemove={() => handleRemove(widget.id)}>
+            <WidgetErrorBoundary
+              widgetTitle={widget.title}
+              onRemove={() => handleRemove(widget.id)}
+            >
               {renderWidget(widget, dragHandleProps)}
             </WidgetErrorBoundary>
             <div

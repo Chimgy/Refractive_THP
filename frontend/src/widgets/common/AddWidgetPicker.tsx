@@ -12,8 +12,16 @@ export default function AddWidgetPicker({ onCancel, onPick }: Props) {
 
   return (
     <div className="modal-backdrop" onMouseDown={onCancel}>
-      <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+      <div
+        className="panel modal-panel"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <span className="card-title">Add widget</span>
           <div className="mono faint" style={{ marginTop: 4, fontSize: 10.5 }}>
             Pick a widget template to drop onto the grid.
@@ -45,7 +53,9 @@ export default function AddWidgetPicker({ onCancel, onPick }: Props) {
               }}
               onClick={() => onPick(entry.type)}
             >
-              <span style={{ font: '500 13px var(--sans)', color: 'var(--text)' }}>
+              <span
+                style={{ font: '500 13px var(--sans)', color: 'var(--text)' }}
+              >
                 {entry.label}
               </span>
               <span className="mono faint" style={{ fontSize: 11 }}>

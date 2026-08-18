@@ -14,7 +14,10 @@ export type FunnelStepType =
   | 'clicked_feature'
   | 'continued_using';
 
-export const FUNNEL_STEP_TYPE_OPTIONS: { value: FunnelStepType; label: string }[] = [
+export const FUNNEL_STEP_TYPE_OPTIONS: {
+  value: FunnelStepType;
+  label: string;
+}[] = [
   { value: 'install', label: 'Installed' },
   { value: 'signup_login', label: 'Signed up / logged in' },
   { value: 'invited_someone', label: 'Invited someone' },
@@ -25,7 +28,12 @@ export const FUNNEL_STEP_TYPE_OPTIONS: { value: FunnelStepType; label: string }[
   { value: 'continued_using', label: 'Continued using for N days' },
 ];
 
-export const FEATURE_OPTIONS = ['dashboards', 'exports', 'invites', 'integrations'];
+export const FEATURE_OPTIONS = [
+  'dashboards',
+  'exports',
+  'invites',
+  'integrations',
+];
 
 export const UTM_SEGMENT_OPTIONS: RangeOption<string>[] = [
   { value: 'all', label: 'All traffic' },
@@ -48,7 +56,10 @@ export type MarketingFunnelConfig = {
   utmSegment: string;
 };
 
-export function defaultFunnelStep(id: string, type: FunnelStepType = 'signup_login'): FunnelStep {
+export function defaultFunnelStep(
+  id: string,
+  type: FunnelStepType = 'signup_login',
+): FunnelStep {
   const step: FunnelStep = { id, type };
   if (type === 'created_projects_count') step.threshold = 3;
   if (type === 'continued_using') step.threshold = 14;
@@ -77,7 +88,9 @@ export function describeFunnelStep(step: FunnelStep): string {
   }
 }
 
-export function defaultMarketingFunnelConfig(seedInput: string): MarketingFunnelConfig {
+export function defaultMarketingFunnelConfig(
+  seedInput: string,
+): MarketingFunnelConfig {
   return {
     seed: seedFromString(seedInput),
     steps: [

@@ -23,10 +23,9 @@ export class GithubRepoLinkService {
     repo: string,
     installationId: string,
   ): Promise<void> {
-    await this.links.upsert(
-      { projectId, owner, repo, installationId },
-      ['projectId'],
-    );
+    await this.links.upsert({ projectId, owner, repo, installationId }, [
+      'projectId',
+    ]);
   }
 
   async unlink(projectId: string): Promise<void> {

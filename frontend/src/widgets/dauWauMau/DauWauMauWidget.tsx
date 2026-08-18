@@ -36,7 +36,10 @@ const tooltipStyle = {
 
 const HOVER_CURSOR = { stroke: 'rgba(237,237,240,.18)' };
 
-const SERIES_META: Record<SeriesKey, { label: string; tone: string; dashArray?: string }> = {
+const SERIES_META: Record<
+  SeriesKey,
+  { label: string; tone: string; dashArray?: string }
+> = {
   dau: { label: 'DAU', tone: '#7b5ce0' },
   wau: { label: 'WAU', tone: '#35c08a' },
   mau: { label: 'MAU', tone: '#e0a33b', dashArray: '4 3' },
@@ -112,14 +115,29 @@ export default function DauWauMauWidget({
   );
 
   const handleExport = useCallback(() => {
-    downloadCsv(`${instance.title.replace(/\s+/g, '-').toLowerCase()}.csv`, seriesToCsv(series));
+    downloadCsv(
+      `${instance.title.replace(/\s+/g, '-').toLowerCase()}.csv`,
+      seriesToCsv(series),
+    );
   }, [instance.title, series]);
 
-  const handleDuplicate = useCallback(() => onDuplicate(instance), [onDuplicate, instance]);
+  const handleDuplicate = useCallback(
+    () => onDuplicate(instance),
+    [onDuplicate, instance],
+  );
 
   const handleSaveEdit = useCallback(
-    ({ ruleSet, visibleSeries }: { ruleSet: ActiveUserRuleSet; visibleSeries: SeriesKey[] }) => {
-      onUpdate({ ...instance, config: { ...instance.config, ruleSet, visibleSeries } });
+    ({
+      ruleSet,
+      visibleSeries,
+    }: {
+      ruleSet: ActiveUserRuleSet;
+      visibleSeries: SeriesKey[];
+    }) => {
+      onUpdate({
+        ...instance,
+        config: { ...instance.config, ruleSet, visibleSeries },
+      });
       setEditorOpen(false);
     },
     [instance, onUpdate],
@@ -140,7 +158,10 @@ export default function DauWauMauWidget({
 
   const chart = (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={series} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+      <LineChart
+        data={series}
+        margin={{ top: 4, right: 8, bottom: 4, left: -12 }}
+      >
         <CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} />
         <XAxis
           dataKey="label"
@@ -203,7 +224,10 @@ export default function DauWauMauWidget({
       )}
 
       {expanded && (
-        <ExpandedViewModal title={`${instance.title} — detail`} onClose={() => setExpanded(false)}>
+        <ExpandedViewModal
+          title={`${instance.title} — detail`}
+          onClose={() => setExpanded(false)}
+        >
           {readoutRow}
           <div style={{ height: 520 }}>{chart}</div>
         </ExpandedViewModal>

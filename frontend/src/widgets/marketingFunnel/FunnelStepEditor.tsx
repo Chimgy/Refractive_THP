@@ -20,7 +20,11 @@ function nextId(): string {
   return `step-${Date.now()}-${idCounter}`;
 }
 
-export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: Props) {
+export default function FunnelStepEditor({
+  steps: initial,
+  onCancel,
+  onSave,
+}: Props) {
   const [steps, setSteps] = useState<FunnelStep[]>(initial);
 
   const updateStep = useCallback((id: string, next: FunnelStep) => {
@@ -28,11 +32,15 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
   }, []);
 
   const changeType = useCallback((id: string, type: FunnelStepType) => {
-    setSteps((prev) => prev.map((s) => (s.id === id ? defaultFunnelStep(id, type) : s)));
+    setSteps((prev) =>
+      prev.map((s) => (s.id === id ? defaultFunnelStep(id, type) : s)),
+    );
   }, []);
 
   const removeStep = useCallback((id: string) => {
-    setSteps((prev) => (prev.length > 1 ? prev.filter((s) => s.id !== id) : prev));
+    setSteps((prev) =>
+      prev.length > 1 ? prev.filter((s) => s.id !== id) : prev,
+    );
   }, []);
 
   const moveStep = useCallback((id: string, dir: -1 | 1) => {
@@ -54,8 +62,16 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
 
   return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
-      <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+      <div
+        className="panel modal-panel"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <span className="card-title">Edit funnel steps</span>
           <div className="mono faint" style={{ marginTop: 4, fontSize: 10.5 }}>
             Add, remove and reorder the milestones users pass through.
@@ -76,17 +92,27 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
             <div
               key={step.id}
               className="dashed"
-              style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}
+              style={{
+                padding: '10px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="mono faint" style={{ fontSize: 10, width: 16 }}>
+                <span
+                  className="mono faint"
+                  style={{ fontSize: 10, width: 16 }}
+                >
                   {i + 1}
                 </span>
                 <select
                   className="select"
                   style={{ flex: 1 }}
                   value={step.type}
-                  onChange={(e) => changeType(step.id, e.target.value as FunnelStepType)}
+                  onChange={(e) =>
+                    changeType(step.id, e.target.value as FunnelStepType)
+                  }
                 >
                   {FUNNEL_STEP_TYPE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -113,7 +139,11 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
                   ↓
                 </button>
                 {steps.length > 1 && (
-                  <button type="button" className="link-btn" onClick={() => removeStep(step.id)}>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => removeStep(step.id)}
+                  >
                     remove
                   </button>
                 )}
@@ -130,7 +160,12 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
                     min={1}
                     style={{ width: 80 }}
                     value={step.threshold ?? 1}
-                    onChange={(e) => updateStep(step.id, { ...step, threshold: Number(e.target.value) })}
+                    onChange={(e) =>
+                      updateStep(step.id, {
+                        ...step,
+                        threshold: Number(e.target.value),
+                      })
+                    }
                   />
                   <span className="mono faint" style={{ fontSize: 11 }}>
                     projects
@@ -149,7 +184,12 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
                     min={1}
                     style={{ width: 80 }}
                     value={step.threshold ?? 7}
-                    onChange={(e) => updateStep(step.id, { ...step, threshold: Number(e.target.value) })}
+                    onChange={(e) =>
+                      updateStep(step.id, {
+                        ...step,
+                        threshold: Number(e.target.value),
+                      })
+                    }
                   />
                   <span className="mono faint" style={{ fontSize: 11 }}>
                     days
@@ -165,7 +205,12 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
                   <select
                     className="select"
                     value={step.featureKey ?? FEATURE_OPTIONS[0]}
-                    onChange={(e) => updateStep(step.id, { ...step, featureKey: e.target.value })}
+                    onChange={(e) =>
+                      updateStep(step.id, {
+                        ...step,
+                        featureKey: e.target.value,
+                      })
+                    }
                   >
                     {FEATURE_OPTIONS.map((f) => (
                       <option key={f} value={f}>
@@ -200,7 +245,11 @@ export default function FunnelStepEditor({ steps: initial, onCancel, onSave }: P
           <button type="button" className="btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSave}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+          >
             Save
           </button>
         </div>

@@ -11,7 +11,8 @@ export function defaultGithubActivityConfig(): GithubActivityConfig {
 registerWidget<GithubActivityConfig>({
   type: WIDGET_TYPE,
   label: 'GitHub Activity',
-  description: 'Real commit activity from the linked GitHub repo — by author, by day, and branches.',
+  description:
+    'Real commit activity from the linked GitHub repo — by author, by day, and branches.',
   minW: 4,
   minH: 6,
   maxW: 8,

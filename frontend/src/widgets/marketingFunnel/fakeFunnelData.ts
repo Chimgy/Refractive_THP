@@ -1,5 +1,10 @@
 import { mulberry32, seedFromString } from '../mockSeeded';
-import { describeFunnelStep, type FunnelStep, type FunnelStepType, type MarketingFunnelConfig } from './config';
+import {
+  describeFunnelStep,
+  type FunnelStep,
+  type FunnelStepType,
+  type MarketingFunnelConfig,
+} from './config';
 
 export type FunnelStepResult = {
   step: FunnelStep;
@@ -45,7 +50,8 @@ export function funnelResultsToCsv(results: FunnelStepResult[]): string {
   const rows = results.map((r, i) => {
     const pctOfFirst = first > 0 ? ((r.count / first) * 100).toFixed(1) : '0';
     const prev = i > 0 ? results[i - 1].count : r.count;
-    const dropOff = prev > 0 ? (((prev - r.count) / prev) * 100).toFixed(1) : '0';
+    const dropOff =
+      prev > 0 ? (((prev - r.count) / prev) * 100).toFixed(1) : '0';
     return `${r.label},${r.count},${pctOfFirst}%,${dropOff}%`;
   });
   return [header, ...rows].join('\n');

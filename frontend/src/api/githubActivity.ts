@@ -4,7 +4,9 @@ export type CommitByAuthor = { author: string; count: number };
 export type CommitByDay = { day: string; count: number };
 export type GithubBranch = { name: string; commit: { sha: string } };
 
-export function getCommitsByAuthor(projectId: string): Promise<CommitByAuthor[]> {
+export function getCommitsByAuthor(
+  projectId: string,
+): Promise<CommitByAuthor[]> {
   return request<CommitByAuthor[]>(
     `/tenant/projects/${encodeURIComponent(projectId)}/github-link/commits/by-author`,
   );

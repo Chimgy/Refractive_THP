@@ -18,13 +18,46 @@ export const RANGE_OPTIONS: RangeOption<Range>[] = [
   { value: '365d', label: '1 year' },
 ];
 
-const BUCKET_COUNT: Record<Range, number> = { '30d': 6, '90d': 12, '180d': 18, '365d': 18 };
+const BUCKET_COUNT: Record<Range, number> = {
+  '30d': 6,
+  '90d': 12,
+  '180d': 18,
+  '365d': 18,
+};
 
 export const STAGES = [
-  { key: 'coding', name: 'Coding / PR', short: 'code', tone: '#7b5ce0', hours: 6.4, p95: 41 },
-  { key: 'review', name: 'Review / queue', short: 'review', tone: '#e0a33b', hours: 18.2, p95: 96 },
-  { key: 'ci', name: 'Build / test', short: 'ci', tone: '#35c08a', hours: 1.1, p95: 3.4 },
-  { key: 'deploy', name: 'Deploy', short: 'deploy', tone: 'rgba(237,237,240,.42)', hours: 0.55, p95: 1.8 },
+  {
+    key: 'coding',
+    name: 'Coding / PR',
+    short: 'code',
+    tone: '#7b5ce0',
+    hours: 6.4,
+    p95: 41,
+  },
+  {
+    key: 'review',
+    name: 'Review / queue',
+    short: 'review',
+    tone: '#e0a33b',
+    hours: 18.2,
+    p95: 96,
+  },
+  {
+    key: 'ci',
+    name: 'Build / test',
+    short: 'ci',
+    tone: '#35c08a',
+    hours: 1.1,
+    p95: 3.4,
+  },
+  {
+    key: 'deploy',
+    name: 'Deploy',
+    short: 'deploy',
+    tone: 'rgba(237,237,240,.42)',
+    hours: 0.55,
+    p95: 1.8,
+  },
 ] as const;
 
 export type StageKey = (typeof STAGES)[number]['key'];
@@ -39,13 +72,52 @@ export const METRICS: {
   tone: string;
   edges: number[];
 }[] = [
-  { id: 'ltc', label: 'Lead time', title: 'Lead time for changes', n: 214, median: 26, sigma: 1.15, tone: '#7b5ce0', edges: [0, 1, 2, 4, 8, 16, 24, 48, 96, 168] },
-  { id: 'review', label: 'Review', title: 'Review / queue time', n: 214, median: 18, sigma: 1.35, tone: '#e0a33b', edges: [0, 1, 2, 4, 8, 16, 24, 48, 96, 168] },
-  { id: 'ci', label: 'Build', title: 'Build / test duration', n: 214, median: 1.1, sigma: 0.5, tone: '#35c08a', edges: [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6] },
-  { id: 'mttr', label: 'MTTR', title: 'Time to restore', n: 41, median: 2.4, sigma: 1.05, tone: '#e2564d', edges: [0, 0.5, 1, 2, 4, 8, 16, 24, 48, 96] },
+  {
+    id: 'ltc',
+    label: 'Lead time',
+    title: 'Lead time for changes',
+    n: 214,
+    median: 26,
+    sigma: 1.15,
+    tone: '#7b5ce0',
+    edges: [0, 1, 2, 4, 8, 16, 24, 48, 96, 168],
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    title: 'Review / queue time',
+    n: 214,
+    median: 18,
+    sigma: 1.35,
+    tone: '#e0a33b',
+    edges: [0, 1, 2, 4, 8, 16, 24, 48, 96, 168],
+  },
+  {
+    id: 'ci',
+    label: 'Build',
+    title: 'Build / test duration',
+    n: 214,
+    median: 1.1,
+    sigma: 0.5,
+    tone: '#35c08a',
+    edges: [0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6],
+  },
+  {
+    id: 'mttr',
+    label: 'MTTR',
+    title: 'Time to restore',
+    n: 41,
+    median: 2.4,
+    sigma: 1.05,
+    tone: '#e2564d',
+    edges: [0, 0.5, 1, 2, 4, 8, 16, 24, 48, 96],
+  },
 ];
 
-export const METRIC_OPTIONS: RangeOption<MetricId>[] = METRICS.map((m) => ({ value: m.id, label: m.label }));
+export const METRIC_OPTIONS: RangeOption<MetricId>[] = METRICS.map((m) => ({
+  value: m.id,
+  label: m.label,
+}));
 
 export const TIER_TONE: Record<Tier, { bg: string; fg: string }> = {
   Elite: { bg: 'rgba(53,192,138,.14)', fg: 'var(--good)' },
@@ -84,8 +156,15 @@ export function hrs(h: number): string {
 export function binLabel(lo: number, hi: number | undefined): string {
   const part = (v: number) => {
     if (v < 1) return { n: String(Math.round(v * 60)), u: 'm' };
-    if (v < 48) return { n: (Math.round(v * 10) / 10).toString().replace(/\.0$/, ''), u: 'h' };
-    return { n: (Math.round((v / 24) * 10) / 10).toString().replace(/\.0$/, ''), u: 'd' };
+    if (v < 48)
+      return {
+        n: (Math.round(v * 10) / 10).toString().replace(/\.0$/, ''),
+        u: 'h',
+      };
+    return {
+      n: (Math.round((v / 24) * 10) / 10).toString().replace(/\.0$/, ''),
+      u: 'd',
+    };
   };
   const a = part(lo);
   if (hi == null) return `${a.n}${a.u}+`;
@@ -96,10 +175,14 @@ export function binLabel(lo: number, hi: number | undefined): string {
 
 function binOf(edges: number[], v: number): { index: number; frac: number } {
   for (let i = 0; i < edges.length - 1; i++) {
-    if (v < edges[i + 1]) return { index: i, frac: (v - edges[i]) / (edges[i + 1] - edges[i]) };
+    if (v < edges[i + 1])
+      return { index: i, frac: (v - edges[i]) / (edges[i + 1] - edges[i]) };
   }
   const last = edges.length - 1;
-  return { index: last, frac: Math.min(0.95, (v - edges[last]) / (edges[last] || 1)) };
+  return {
+    index: last,
+    frac: Math.min(0.95, (v - edges[last]) / (edges[last] || 1)),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +190,12 @@ function binOf(edges: number[], v: number): { index: number; frac: number } {
 // per-stage lead-time breakdown, all bucketed over the selected window.
 // ---------------------------------------------------------------------------
 
-export type WeekBucket = { label: string; df: number; cfr: number; stack: Record<StageKey, number> };
+export type WeekBucket = {
+  label: string;
+  df: number;
+  cfr: number;
+  stack: Record<StageKey, number>;
+};
 
 export function generateSeries(range: Range, seed: number): WeekBucket[] {
   const n = BUCKET_COUNT[range];
@@ -119,7 +207,8 @@ export function generateSeries(range: Range, seed: number): WeekBucket[] {
     const cfr = Math.max(4, 22 - ramp * 8 + (rand() - 0.5) * 5);
     const scale = 1.35 - ramp * 0.5 + (rand() - 0.5) * 0.25;
     const stack = {} as Record<StageKey, number>;
-    for (const s of STAGES) stack[s.key] = s.hours * scale * (0.75 + rand() * 0.5);
+    for (const s of STAGES)
+      stack[s.key] = s.hours * scale * (0.75 + rand() * 0.5);
     out.push({ label: `W${String(i + 1).padStart(2, '0')}`, df, cfr, stack });
   }
   return out;
@@ -147,7 +236,12 @@ function samplesFor(metric: (typeof METRICS)[number], seed: number): number[] {
     const u = Math.max(1e-9, rand());
     const v = rand();
     const g = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-    out.push(Math.max(metric.edges[1] * 0.15, metric.median * Math.exp(metric.sigma * g)));
+    out.push(
+      Math.max(
+        metric.edges[1] * 0.15,
+        metric.median * Math.exp(metric.sigma * g),
+      ),
+    );
   }
   return out.sort((a, b) => a - b);
 }
@@ -155,7 +249,10 @@ function samplesFor(metric: (typeof METRICS)[number], seed: number): number[] {
 export type HistBin = { label: string; count: number; tone: string };
 export type RugPoint = { x: number; y: number; tone: string };
 
-export function distributionFor(metric: (typeof METRICS)[number], seed: number) {
+export function distributionFor(
+  metric: (typeof METRICS)[number],
+  seed: number,
+) {
   const vals = samplesFor(metric, seed);
   const edges = metric.edges;
   const nBins = edges.length;
@@ -177,7 +274,11 @@ export function distributionFor(metric: (typeof METRICS)[number], seed: number) 
     return {
       label: binLabel(edges[i], edges[i + 1]),
       count,
-      tone: isTail ? 'var(--bad)' : i === modeIndex ? metric.tone : `${metric.tone}cc`,
+      tone: isTail
+        ? 'var(--bad)'
+        : i === modeIndex
+          ? metric.tone
+          : `${metric.tone}cc`,
     };
   });
   const tailCount = vals.filter((v) => v >= edges[nBins - 2]).length;
@@ -189,7 +290,11 @@ export function distributionFor(metric: (typeof METRICS)[number], seed: number) 
       { label: 'Events', value: String(metric.n), tone: 'var(--text)' },
       { label: 'Mode bin', value: hist[modeIndex].label, tone: metric.tone },
       { label: 'Median', value: hrs(median), tone: 'var(--text)' },
-      { label: 'Long tail', value: `${tailCount} ≥ ${hrs(edges[nBins - 2])}`, tone: 'var(--bad)' },
+      {
+        label: 'Long tail',
+        value: `${tailCount} ≥ ${hrs(edges[nBins - 2])}`,
+        tone: 'var(--bad)',
+      },
     ],
   };
 }
@@ -213,7 +318,13 @@ export const SEV_TONE: Record<Severity, { bg: string; fg: string }> = {
   SEV3: { bg: 'var(--accent-soft)', fg: 'var(--accent-text)' },
 };
 
-const SERVICES = ['api-gateway', 'telemetry-ingest', 'web-portal', 'auth-service', 'billing-worker'];
+const SERVICES = [
+  'api-gateway',
+  'telemetry-ingest',
+  'web-portal',
+  'auth-service',
+  'billing-worker',
+];
 const AUTHORS = ['m.okafor', 'j.lindqvist', 'a.khan', 'r.duarte', 's.varga'];
 
 function randomSha(rand: () => number): string {
@@ -256,7 +367,8 @@ export function generateDeploys(seed: number, count = 9): Deploy[] {
     const ci = 0.4 + rand() * 2;
     const lead = coding + review + ci + 0.4;
     const statusRoll = rand();
-    const status: DeployStatus = statusRoll < 0.68 ? 'SUCCESS' : statusRoll < 0.87 ? 'HOTFIX' : 'ROLLBACK';
+    const status: DeployStatus =
+      statusRoll < 0.68 ? 'SUCCESS' : statusRoll < 0.87 ? 'HOTFIX' : 'ROLLBACK';
     rows.push({
       sha: randomSha(rand),
       service: SERVICES[Math.floor(rand() * SERVICES.length)],
@@ -265,7 +377,12 @@ export function generateDeploys(seed: number, count = 9): Deploy[] {
       review: hrs(review),
       ci: hrs(ci),
       lead: hrs(lead),
-      reviewTone: review >= 24 ? 'var(--bad)' : review >= 12 ? 'var(--warn)' : 'var(--muted)',
+      reviewTone:
+        review >= 24
+          ? 'var(--bad)'
+          : review >= 12
+            ? 'var(--warn)'
+            : 'var(--muted)',
       status,
     });
     hoursAgo += 2 + rand() * 22;
@@ -294,7 +411,8 @@ export function generateIncidents(seed: number, count = 4): Incident[] {
     const fix = 0.5 + rand() * rand() * 8;
     const total = detect + fix;
     const sevRoll = rand();
-    const sev: Severity = sevRoll < 0.25 ? 'SEV1' : sevRoll < 0.7 ? 'SEV2' : 'SEV3';
+    const sev: Severity =
+      sevRoll < 0.25 ? 'SEV1' : sevRoll < 0.7 ? 'SEV2' : 'SEV3';
     rows.push({
       id: `INC-${idNum}`,
       service: SERVICES[Math.floor(rand() * SERVICES.length)],

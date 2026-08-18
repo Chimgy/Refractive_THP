@@ -26,7 +26,10 @@ type Props = {
   ruleSet: ActiveUserRuleSet;
   visibleSeries: SeriesKey[];
   onCancel: () => void;
-  onSave: (next: { ruleSet: ActiveUserRuleSet; visibleSeries: SeriesKey[] }) => void;
+  onSave: (next: {
+    ruleSet: ActiveUserRuleSet;
+    visibleSeries: SeriesKey[];
+  }) => void;
 };
 
 let ruleIdCounter = 0;
@@ -72,21 +75,18 @@ export default function ActiveUserRuleEditor({
     }));
   }, []);
 
-  const setBasis = useCallback(
-    (id: string, basis: ActiveUserRule['basis']) => {
-      setDraft((d) => ({
-        ...d,
-        rules: d.rules.map((r) =>
-          r.id === id
-            ? basis === 'session_time'
-              ? defaultSessionTimeRule(id)
-              : defaultEventsRule(id)
-            : r,
-        ),
-      }));
-    },
-    [],
-  );
+  const setBasis = useCallback((id: string, basis: ActiveUserRule['basis']) => {
+    setDraft((d) => ({
+      ...d,
+      rules: d.rules.map((r) =>
+        r.id === id
+          ? basis === 'session_time'
+            ? defaultSessionTimeRule(id)
+            : defaultEventsRule(id)
+          : r,
+      ),
+    }));
+  }, []);
 
   const addRule = useCallback(() => {
     setDraft((d) => ({
@@ -154,7 +154,14 @@ export default function ActiveUserRuleEditor({
           <div className="label" style={{ marginTop: 20 }}>
             Active user definition
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              marginTop: 10,
+            }}
+          >
             {draft.rules.map((rule, i) => (
               <div key={rule.id}>
                 {i > 0 && (
@@ -290,7 +297,14 @@ function RuleRow({
       </div>
 
       {rule.basis === 'session_time' ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
           <select
             className="select"
             value={rule.comparator}
@@ -310,7 +324,9 @@ function RuleRow({
             min={0}
             style={{ width: 90 }}
             value={rule.value}
-            onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
+            onChange={(e) =>
+              onChange({ ...rule, value: Number(e.target.value) })
+            }
           />
           <select
             className="select"

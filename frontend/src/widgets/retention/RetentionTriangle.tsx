@@ -28,7 +28,13 @@ export default function RetentionTriangle({
             <th style={headStyle('left', compact)}>Cohort</th>
             <th style={headStyle('right', compact)}>Size</th>
             {Array.from({ length: maxOffset + 1 }, (_, i) => (
-              <th key={i} style={{ ...headStyle('center', compact), minWidth: cellMinWidth }}>
+              <th
+                key={i}
+                style={{
+                  ...headStyle('center', compact),
+                  minWidth: cellMinWidth,
+                }}
+              >
                 W{i}
               </th>
             ))}
@@ -37,7 +43,12 @@ export default function RetentionTriangle({
         <tbody>
           {cohorts.map((c) => (
             <tr key={c.label}>
-              <td style={{ padding: compact ? '5px 8px' : '7px 10px', color: 'var(--muted)' }}>
+              <td
+                style={{
+                  padding: compact ? '5px 8px' : '7px 10px',
+                  color: 'var(--muted)',
+                }}
+              >
                 {c.label}
               </td>
               <td
@@ -58,7 +69,9 @@ export default function RetentionTriangle({
                     textAlign: 'center',
                     borderRadius: 6,
                     background:
-                      pct == null ? 'rgba(255,255,255,.03)' : `rgba(123,92,224,${Math.max(0.1, (pct / 100) * 0.85)})`,
+                      pct == null
+                        ? 'rgba(255,255,255,.03)'
+                        : `rgba(123,92,224,${Math.max(0.1, (pct / 100) * 0.85)})`,
                     color: pct == null ? 'transparent' : 'var(--text)',
                   }}
                 >
@@ -73,7 +86,10 @@ export default function RetentionTriangle({
   );
 }
 
-function headStyle(align: 'left' | 'right' | 'center', compact: boolean): CSSProperties {
+function headStyle(
+  align: 'left' | 'right' | 'center',
+  compact: boolean,
+): CSSProperties {
   return {
     textAlign: align,
     padding: compact ? '4px 8px' : '5px 10px',

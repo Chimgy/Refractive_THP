@@ -48,7 +48,10 @@ export default function SiteHeader({ subtitle, project, actions }: Props) {
         </button>
         {project && (
           <>
-            <ProjectSwitcher activeProjectId={project.id} label={project.name} />
+            <ProjectSwitcher
+              activeProjectId={project.id}
+              label={project.name}
+            />
             <span className="mono faint" style={{ fontSize: 11.5 }}>
               {project.subtitle}
             </span>

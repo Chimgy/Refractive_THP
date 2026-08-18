@@ -9,11 +9,7 @@ export const SESSION_TIME_UNITS: { value: SessionTimeUnit; label: string }[] = [
 ];
 
 export type EventType =
-  | 'clicks'
-  | 'page_views'
-  | 'scroll_depth'
-  | 'logged_in'
-  | 'invited_person';
+  'clicks' | 'page_views' | 'scroll_depth' | 'logged_in' | 'invited_person';
 
 export const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: 'clicks', label: 'Clicks' },

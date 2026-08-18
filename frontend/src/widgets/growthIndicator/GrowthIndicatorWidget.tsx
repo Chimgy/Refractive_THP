@@ -1,13 +1,28 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import WidgetShell from '../WidgetShell';
 import type { DragHandleProps } from '../grid/DashboardGrid';
 import type { WidgetInstance } from '../grid/types';
 import RangeSelect from '../common/RangeSelect';
 import ExpandedViewModal from '../common/ExpandedViewModal';
 import GrowthIndicatorEditor from './GrowthIndicatorEditor';
-import { INTERVAL_OPTIONS, type GrowthIndicatorConfig, type GrowthSegment } from './config';
-import { generateGrowthSegments, growthSegmentsToCsv } from './fakeGrowthSegments';
+import {
+  INTERVAL_OPTIONS,
+  type GrowthIndicatorConfig,
+  type GrowthSegment,
+} from './config';
+import {
+  generateGrowthSegments,
+  growthSegmentsToCsv,
+} from './fakeGrowthSegments';
 
 const axis = {
   stroke: 'rgba(237,237,240,.3)',
@@ -67,12 +82,18 @@ export default function GrowthIndicatorWidget({
   const [expanded, setExpanded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const points = useMemo(() => generateGrowthSegments(instance.config), [instance.config]);
+  const points = useMemo(
+    () => generateGrowthSegments(instance.config),
+    [instance.config],
+  );
   const latest = points[points.length - 1];
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    onUpdate({ ...instance, config: { ...instance.config, seed: Date.now() & 0xffffffff } });
+    onUpdate({
+      ...instance,
+      config: { ...instance.config, seed: Date.now() & 0xffffffff },
+    });
     window.setTimeout(() => setRefreshing(false), 300);
   }, [instance, onUpdate]);
 
@@ -94,7 +115,10 @@ export default function GrowthIndicatorWidget({
     );
   }, [instance.title, points]);
 
-  const handleDuplicate = useCallback(() => onDuplicate(instance), [onDuplicate, instance]);
+  const handleDuplicate = useCallback(
+    () => onDuplicate(instance),
+    [onDuplicate, instance],
+  );
 
   const handleSaveEdit = useCallback(
     (next: Partial<GrowthIndicatorConfig>) => {
@@ -105,7 +129,15 @@ export default function GrowthIndicatorWidget({
   );
 
   const readoutRow = (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, marginBottom: 14, flex: 'none' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 18,
+        marginBottom: 14,
+        flex: 'none',
+      }}
+    >
       {instance.config.visibleSegments.map((key) => (
         <SegmentReadout
           key={key}
@@ -119,7 +151,10 @@ export default function GrowthIndicatorWidget({
 
   const chart = (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={points} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+      <BarChart
+        data={points}
+        margin={{ top: 4, right: 8, bottom: 4, left: -12 }}
+      >
         <CartesianGrid stroke="rgba(255,255,255,.055)" vertical={false} />
         <XAxis dataKey="label" {...axis} />
         <YAxis {...axis} width={46} />
@@ -140,7 +175,10 @@ export default function GrowthIndicatorWidget({
   return (
     <WidgetShell
       title={instance.title}
-      description={instance.description ?? 'Logged-in users only — IP-based identification isn’t used.'}
+      description={
+        instance.description ??
+        'Logged-in users only — IP-based identification isn’t used.'
+      }
       dragHandleProps={dragHandleProps}
       loading={refreshing}
       onRefresh={handleRefresh}
@@ -170,7 +208,10 @@ export default function GrowthIndicatorWidget({
       )}
 
       {expanded && (
-        <ExpandedViewModal title={`${instance.title} — detail`} onClose={() => setExpanded(false)}>
+        <ExpandedViewModal
+          title={`${instance.title} — detail`}
+          onClose={() => setExpanded(false)}
+        >
           {readoutRow}
           <div style={{ height: 520 }}>{chart}</div>
         </ExpandedViewModal>
@@ -190,7 +231,15 @@ function SegmentReadout({
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-      <span style={{ width: 9, height: 9, borderRadius: 2, background: tone, flex: 'none' }} />
+      <span
+        style={{
+          width: 9,
+          height: 9,
+          borderRadius: 2,
+          background: tone,
+          flex: 'none',
+        }}
+      />
       <div>
         <div className="mono" style={{ fontSize: 19, color: 'var(--text)' }}>
           {value?.toLocaleString() ?? '—'}

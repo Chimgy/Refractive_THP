@@ -1,7 +1,10 @@
 // A small headerExtra dropdown for widgets with a time-range/interval
 // control (DAU/WAU/MAU's day count, Growth Indicator's week/month interval,
 // ...). Deliberately generic over the option value so it isn't tied to days.
-export type RangeOption<T extends string | number> = { value: T; label: string };
+export type RangeOption<T extends string | number> = {
+  value: T;
+  label: string;
+};
 
 type Props<T extends string | number> = {
   value: T;

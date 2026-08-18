@@ -83,7 +83,7 @@ export class ProjectsController {
     return { projectId, days, uniqueVisitors };
   }
 
-  // findByIdForCompany 404s a projectId that exists but belongs 
+  // findByIdForCompany 404s a projectId that exists but belongs
   // to a different company
   @Get(':projectId/telemetry/summary')
   async telemetrySummary(

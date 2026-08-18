@@ -13,7 +13,9 @@ export class AddGithubRepoLinks1787045563467 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."IDX_github_repo_links_project"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_github_repo_links_project"`,
+    );
     await queryRunner.query(`DROP TABLE "github_repo_links"`);
   }
 }

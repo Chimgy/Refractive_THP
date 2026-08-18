@@ -14,7 +14,11 @@ import ExpandedViewModal from '../common/ExpandedViewModal';
 import { seedFromString } from '../mockSeeded';
 import RetentionEditor from './RetentionEditor';
 import RetentionTriangle from './RetentionTriangle';
-import { COHORT_TYPE_OPTIONS, type RetentionConfig, type ViewMode } from './config';
+import {
+  COHORT_TYPE_OPTIONS,
+  type RetentionConfig,
+  type ViewMode,
+} from './config';
 import {
   averageRetentionCurve,
   cohortsToCsv,
@@ -81,7 +85,12 @@ export default function RetentionWidget({
       seedFromString(
         `${config.seed}:${config.cohortType}:${config.selectedEntities.join(',')}:${JSON.stringify(config.retentionBasis)}`,
       ),
-    [config.seed, config.cohortType, config.selectedEntities, config.retentionBasis],
+    [
+      config.seed,
+      config.cohortType,
+      config.selectedEntities,
+      config.retentionBasis,
+    ],
   );
 
   const cohorts = useMemo(
@@ -93,7 +102,13 @@ export default function RetentionWidget({
         selectedEntities: config.selectedEntities,
         retentionBasis: config.retentionBasis,
       }),
-    [effectiveSeed, config.cohortWeeks, config.cohortType, config.selectedEntities, config.retentionBasis],
+    [
+      effectiveSeed,
+      config.cohortWeeks,
+      config.cohortType,
+      config.selectedEntities,
+      config.retentionBasis,
+    ],
   );
 
   const avgCurve = useMemo(() => averageRetentionCurve(cohorts), [cohorts]);
@@ -102,7 +117,9 @@ export default function RetentionWidget({
   const chartData = useMemo(() => {
     const maxOffset = Math.max(0, ...cohorts.map((c) => c.weeksElapsed));
     return Array.from({ length: maxOffset + 1 }, (_, offset) => {
-      const row: Record<string, number | undefined> & { offset: number } = { offset };
+      const row: Record<string, number | undefined> & { offset: number } = {
+        offset,
+      };
       row.average = avgCurve.find((p) => p.offset === offset)?.pct;
       recentCohorts.forEach((c, i) => {
         row[`c${i}`] = c.retentionPct[offset] ?? undefined;
@@ -113,12 +130,16 @@ export default function RetentionWidget({
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    onUpdate({ ...instance, config: { ...config, seed: Date.now() & 0xffffffff } });
+    onUpdate({
+      ...instance,
+      config: { ...config, seed: Date.now() & 0xffffffff },
+    });
     window.setTimeout(() => setRefreshing(false), 300);
   }, [instance, config, onUpdate]);
 
   const setViewMode = useCallback(
-    (viewMode: ViewMode) => onUpdate({ ...instance, config: { ...config, viewMode } }),
+    (viewMode: ViewMode) =>
+      onUpdate({ ...instance, config: { ...config, viewMode } }),
     [instance, config, onUpdate],
   );
 
@@ -128,10 +149,16 @@ export default function RetentionWidget({
   );
 
   const handleExport = useCallback(() => {
-    downloadCsv(`${instance.title.replace(/\s+/g, '-').toLowerCase()}.csv`, cohortsToCsv(cohorts));
+    downloadCsv(
+      `${instance.title.replace(/\s+/g, '-').toLowerCase()}.csv`,
+      cohortsToCsv(cohorts),
+    );
   }, [instance.title, cohorts]);
 
-  const handleDuplicate = useCallback(() => onDuplicate(instance), [onDuplicate, instance]);
+  const handleDuplicate = useCallback(
+    () => onDuplicate(instance),
+    [onDuplicate, instance],
+  );
 
   const handleSaveEdit = useCallback(
     (next: Partial<RetentionConfig>) => {
@@ -143,10 +170,22 @@ export default function RetentionWidget({
 
   const graphView = (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+      <LineChart
+        data={chartData}
+        margin={{ top: 4, right: 8, bottom: 4, left: -12 }}
+      >
         <XAxis dataKey="offset" tickFormatter={(v) => `W${v}`} {...axis} />
-        <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} {...axis} width={40} />
-        <Tooltip contentStyle={tooltipStyle} cursor={HOVER_CURSOR} labelFormatter={(v) => `Week ${v}`} />
+        <YAxis
+          domain={[0, 100]}
+          tickFormatter={(v) => `${v}%`}
+          {...axis}
+          width={40}
+        />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          cursor={HOVER_CURSOR}
+          labelFormatter={(v) => `Week ${v}`}
+        />
         {recentCohorts.map((c, i) => (
           <Line
             key={c.label}
@@ -208,15 +247,26 @@ export default function RetentionWidget({
       }
     >
       <div style={{ flex: 1, minHeight: 120 }}>
-        {config.viewMode === 'graph' ? graphView : <RetentionTriangle cohorts={cohorts} compact />}
+        {config.viewMode === 'graph' ? (
+          graphView
+        ) : (
+          <RetentionTriangle cohorts={cohorts} compact />
+        )}
       </div>
 
       {editorOpen && (
-        <RetentionEditor value={config} onCancel={() => setEditorOpen(false)} onSave={handleSaveEdit} />
+        <RetentionEditor
+          value={config}
+          onCancel={() => setEditorOpen(false)}
+          onSave={handleSaveEdit}
+        />
       )}
 
       {expanded && (
-        <ExpandedViewModal title={`${instance.title} — detail`} onClose={() => setExpanded(false)}>
+        <ExpandedViewModal
+          title={`${instance.title} — detail`}
+          onClose={() => setExpanded(false)}
+        >
           <div className="label">Graph</div>
           <div style={{ height: 340, marginTop: 10 }}>{graphView}</div>
           <div className="label" style={{ marginTop: 26 }}>

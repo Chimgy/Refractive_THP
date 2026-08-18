@@ -31,7 +31,8 @@ import {
 
 type ConnectionEntry = { name: string; status: 'CONNECTED' | 'CONNECT' };
 
-type Tab = 'dev' | 'post' | 'telemetry' | 'customDash1' | 'customDora1' | 'connections';
+type Tab =
+  'dev' | 'post' | 'telemetry' | 'customDash1' | 'customDora1' | 'connections';
 
 const tabs: { id: Tab; label: string }[] = [
   { id: 'dev', label: 'In development' },
@@ -388,7 +389,11 @@ function PostDevTab({ projectId }: { projectId: string }) {
   const responseMix = summary
     ? ([
         { code: '2xx', count: summary.status2xxCount, tone: 'var(--good)' },
-        { code: '3xx', count: summary.status3xxCount, tone: 'rgba(123,92,224,.6)' },
+        {
+          code: '3xx',
+          count: summary.status3xxCount,
+          tone: 'rgba(123,92,224,.6)',
+        },
         { code: '4xx', count: summary.status4xxCount, tone: 'var(--warn)' },
         { code: '5xx', count: summary.status5xxCount, tone: 'var(--bad)' },
       ] as const)
@@ -728,7 +733,10 @@ function MiniBar({
       }}
     >
       <div>
-        <div className="mono" style={{ fontSize: 11.5, color: 'rgba(237,237,240,.7)' }}>
+        <div
+          className="mono"
+          style={{ fontSize: 11.5, color: 'rgba(237,237,240,.7)' }}
+        >
           {label}
         </div>
         <div
@@ -795,7 +803,13 @@ function PercentileCacheBlock({
       />
       <div
         className="mono faint"
-        style={{ fontSize: 10, marginLeft: 122, marginTop: 4, display: 'flex', gap: 12 }}
+        style={{
+          fontSize: 10,
+          marginLeft: 122,
+          marginTop: 4,
+          display: 'flex',
+          gap: 12,
+        }}
       >
         <span>p50 {fmt(p50)}</span>
         <span>p75 {fmt(p75)}</span>
@@ -823,7 +837,11 @@ function rankedShares(
     pct: (e.count / total) * 100,
   }));
   if (restCount > 0) {
-    rows.push({ key: 'other', count: restCount, pct: (restCount / total) * 100 });
+    rows.push({
+      key: 'other',
+      count: restCount,
+      pct: (restCount / total) * 100,
+    });
   }
   return rows;
 }
@@ -848,9 +866,9 @@ function TelemetryTab({
     null,
   );
   const [errorsFailed, setErrorsFailed] = useState(false);
-  const [expandedFingerprint, setExpandedFingerprint] = useState<
-    string | null
-  >(null);
+  const [expandedFingerprint, setExpandedFingerprint] = useState<string | null>(
+    null,
+  );
   const [snapshotsByFingerprint, setSnapshotsByFingerprint] = useState<
     Record<string, telemetryApi.ErrorSnapshot[] | 'loading' | 'failed'>
   >({});
@@ -987,7 +1005,11 @@ function TelemetryTab({
         <Stat
           label="Median session"
           value={formatDuration(summary?.sessionWallP50 ?? null)}
-          delta={summaryFailed ? 'failed to load' : 'wall clock · median, outlier-resistant'}
+          delta={
+            summaryFailed
+              ? 'failed to load'
+              : 'wall clock · median, outlier-resistant'
+          }
           deltaTone={summaryFailed ? 'bad' : 'muted'}
         />
         <Stat
@@ -1178,9 +1200,7 @@ function TelemetryTab({
                 whiteSpace: 'nowrap',
               }}
             >
-              {
-                `<script src="https://thp.dev/THP_analytics.js" data-project-id="${projectId}"></script>`
-              }
+              {`<script src="https://thp.dev/THP_analytics.js" data-project-id="${projectId}"></script>`}
             </div>
           </Card>
         </div>
@@ -1252,13 +1272,23 @@ function TelemetryTab({
             );
             if (total === 0) {
               return (
-                <div className="mono faint" style={{ fontSize: 11, marginTop: 14 }}>
+                <div
+                  className="mono faint"
+                  style={{ fontSize: 11, marginTop: 14 }}
+                >
                   No device data recorded yet.
                 </div>
               );
             }
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 11,
+                  marginTop: 16,
+                }}
+              >
                 {DEVICE_ORDER.map((key) => (
                   <MiniBar
                     key={key}
@@ -1300,7 +1330,14 @@ function TelemetryTab({
             </span>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 11,
+              marginTop: 16,
+            }}
+          >
             {(summary?.scrollDepth ?? []).map((s) => (
               <MiniBar
                 key={s.depth}
@@ -1318,7 +1355,9 @@ function TelemetryTab({
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
+      >
         <Card
           title="Largest Contentful Paint"
           aside={
@@ -1336,7 +1375,11 @@ function TelemetryTab({
             }
           />
           <BigStat
-            value={summary?.lcpCachedP50 != null ? (summary.lcpCachedP50 / 1000).toFixed(2) : '—'}
+            value={
+              summary?.lcpCachedP50 != null
+                ? (summary.lcpCachedP50 / 1000).toFixed(2)
+                : '—'
+            }
             unit={summary?.lcpCachedP50 != null ? 's' : undefined}
           />
           <div
@@ -1389,7 +1432,8 @@ function TelemetryTab({
           >
             {summary?.lcpColdP50 != null || summary?.lcpCachedP50 != null ? (
               (() => {
-                const sFmt = (v: number | null) => (v != null ? `${(v / 1000).toFixed(2)}s` : '—');
+                const sFmt = (v: number | null) =>
+                  v != null ? `${(v / 1000).toFixed(2)}s` : '—';
                 const cold = summary?.lcpColdP50 ?? 0;
                 const cached = summary?.lcpCachedP50 ?? 0;
                 const scale = Math.max(cold, cached, 1);
@@ -1441,10 +1485,21 @@ function TelemetryTab({
             }
           />
           <BigStat
-            value={summary?.ttfbHitP50 != null ? String(Math.round(summary.ttfbHitP50)) : '—'}
+            value={
+              summary?.ttfbHitP50 != null
+                ? String(Math.round(summary.ttfbHitP50))
+                : '—'
+            }
             unit={summary?.ttfbHitP50 != null ? 'ms' : undefined}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              marginTop: 16,
+            }}
+          >
             {summary?.ttfbHitP50 != null || summary?.ttfbMissP50 != null ? (
               (() => {
                 const hitP50 = summary?.ttfbHitP50 ?? 0;
@@ -1492,18 +1547,30 @@ function TelemetryTab({
         >
           <div style={{ display: 'flex', gap: 26, marginTop: 18 }}>
             <div>
-              <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 20, color: 'var(--text)' }}
+              >
                 {formatDuration(summary?.sessionActiveP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 median active
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 20, color: 'rgba(237,237,240,.45)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 20, color: 'rgba(237,237,240,.45)' }}
+              >
                 {formatDuration(summary?.sessionWallP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 wall clock
               </div>
             </div>
@@ -1554,34 +1621,49 @@ function TelemetryTab({
         >
           <div style={{ marginTop: 10, display: 'flex', gap: 26 }}>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {summary ? summary.sessions.toLocaleString() : '—'}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 sessions
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {formatDuration(summary?.sessionWallP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 median duration
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {pagesPerSession !== null ? pagesPerSession.toFixed(1) : '—'}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 pages / session
               </div>
             </div>
           </div>
-          <div
-            className="mono faint"
-            style={{ fontSize: 10.5, marginTop: 20 }}
-          >
+          <div className="mono faint" style={{ fontSize: 10.5, marginTop: 20 }}>
             distribution by wall-clock duration
           </div>
           <div
@@ -1596,7 +1678,9 @@ function TelemetryTab({
             {(summary?.sessionWallDurationBuckets ?? []).map((b) => {
               const maxCount = Math.max(
                 1,
-                ...(summary?.sessionWallDurationBuckets.map((s) => s.count) ?? [1]),
+                ...(summary?.sessionWallDurationBuckets.map((s) => s.count) ?? [
+                  1,
+                ]),
               );
               return (
                 <div
@@ -1702,10 +1786,7 @@ function TelemetryTab({
               </div>
             </>
           ) : (
-            <div
-              className="mono faint"
-              style={{ fontSize: 11, marginTop: 16 }}
-            >
+            <div className="mono faint" style={{ fontSize: 11, marginTop: 16 }}>
               No cold-navigation samples with load-phase data yet.
             </div>
           )}
@@ -1720,9 +1801,21 @@ function TelemetryTab({
           </span>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 11,
+            marginTop: 16,
+          }}
+        >
           {rankedShares(summary?.utmSources ?? [], 8).map((s) => (
-            <MiniBar key={s.key} label={s.key} pct={s.pct} value={s.count.toLocaleString()} />
+            <MiniBar
+              key={s.key}
+              label={s.key}
+              pct={s.pct}
+              value={s.count.toLocaleString()}
+            />
           ))}
           {summary && summary.utmSources.length === 0 ? (
             <div className="mono faint" style={{ fontSize: 11 }}>
@@ -1760,12 +1853,18 @@ function TelemetryTab({
           <span>LAST SEEN</span>
         </div>
         {errorsFailed ? (
-          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+          <div
+            className="mono faint"
+            style={{ padding: '15px 30px', fontSize: 11 }}
+          >
             failed to load errors
           </div>
         ) : null}
         {!errorsFailed && errors && errors.length === 0 ? (
-          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+          <div
+            className="mono faint"
+            style={{ padding: '15px 30px', fontSize: 11 }}
+          >
             No errors recorded.
           </div>
         ) : null}
@@ -1809,7 +1908,10 @@ function TelemetryTab({
                 <span className="mono faint" style={{ fontSize: 11 }}>
                   {err.line ?? '—'}:{err.col ?? '—'}
                 </span>
-                <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span
+                  className="mono"
+                  style={{ fontSize: 12, color: 'var(--muted)' }}
+                >
                   {err.count.toLocaleString()}
                 </span>
                 <span className="mono faint" style={{ fontSize: 11 }}>
@@ -1836,8 +1938,8 @@ function TelemetryTab({
                   ) : null}
                   {Array.isArray(snapshots) && snapshots.length === 0 ? (
                     <div className="mono faint" style={{ fontSize: 11 }}>
-                      No raw snapshots retained for this fingerprint (current
-                      + previous month only).
+                      No raw snapshots retained for this fingerprint (current +
+                      previous month only).
                     </div>
                   ) : null}
                   {Array.isArray(snapshots)

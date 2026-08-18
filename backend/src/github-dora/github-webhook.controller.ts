@@ -1,4 +1,12 @@
-import { Controller, ForbiddenException, Headers, HttpCode, Logger, Post, Req } from '@nestjs/common';
+import {
+  Controller,
+  ForbiddenException,
+  Headers,
+  HttpCode,
+  Logger,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { GithubCommitService } from './github-commit.service';
@@ -38,13 +46,17 @@ export class GithubWebhookController {
     if (event === 'ping') return { ok: true };
     if (event !== 'push') return { ok: true };
 
-    const payload = JSON.parse(rawBody.toString('utf8')) as GithubPushEventPayload;
+    const payload = JSON.parse(
+      rawBody.toString('utf8'),
+    ) as GithubPushEventPayload;
     if (payload.deleted) return { ok: true };
 
     const [owner, repo] = payload.repository.full_name.split('/');
     const link = await this.repoLinks.findByOwnerRepo(owner, repo);
     if (!link) {
-      this.logger.warn(`Push webhook for unlinked repo ${payload.repository.full_name}`);
+      this.logger.warn(
+        `Push webhook for unlinked repo ${payload.repository.full_name}`,
+      );
       return { ok: true };
     }
 

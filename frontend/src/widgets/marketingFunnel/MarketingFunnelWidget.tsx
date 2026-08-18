@@ -5,7 +5,11 @@ import type { WidgetInstance } from '../grid/types';
 import RangeSelect from '../common/RangeSelect';
 import ExpandedViewModal from '../common/ExpandedViewModal';
 import FunnelStepEditor from './FunnelStepEditor';
-import { UTM_SEGMENT_OPTIONS, type FunnelStep, type MarketingFunnelConfig } from './config';
+import {
+  UTM_SEGMENT_OPTIONS,
+  type FunnelStep,
+  type MarketingFunnelConfig,
+} from './config';
 import { funnelResultsToCsv, generateFunnelResults } from './fakeFunnelData';
 
 type Props = {
@@ -48,12 +52,16 @@ export default function MarketingFunnelWidget({
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    onUpdate({ ...instance, config: { ...config, seed: Date.now() & 0xffffffff } });
+    onUpdate({
+      ...instance,
+      config: { ...config, seed: Date.now() & 0xffffffff },
+    });
     window.setTimeout(() => setRefreshing(false), 300);
   }, [instance, config, onUpdate]);
 
   const handleSegmentChange = useCallback(
-    (utmSegment: string) => onUpdate({ ...instance, config: { ...config, utmSegment } }),
+    (utmSegment: string) =>
+      onUpdate({ ...instance, config: { ...config, utmSegment } }),
     [instance, config, onUpdate],
   );
 
@@ -69,7 +77,10 @@ export default function MarketingFunnelWidget({
     );
   }, [instance.title, results]);
 
-  const handleDuplicate = useCallback(() => onDuplicate(instance), [onDuplicate, instance]);
+  const handleDuplicate = useCallback(
+    () => onDuplicate(instance),
+    [onDuplicate, instance],
+  );
 
   const handleSaveSteps = useCallback(
     (steps: FunnelStep[]) => {
@@ -100,7 +111,9 @@ export default function MarketingFunnelWidget({
   return (
     <WidgetShell
       title={instance.title}
-      description={instance.description ?? `${config.steps.length} steps · grouped by UTM`}
+      description={
+        instance.description ?? `${config.steps.length} steps · grouped by UTM`
+      }
       dragHandleProps={dragHandleProps}
       loading={refreshing}
       onRefresh={handleRefresh}
@@ -121,7 +134,10 @@ export default function MarketingFunnelWidget({
       {funnelList}
 
       {expanded && (
-        <ExpandedViewModal title={`${instance.title} — detail`} onClose={() => setExpanded(false)}>
+        <ExpandedViewModal
+          title={`${instance.title} — detail`}
+          onClose={() => setExpanded(false)}
+        >
           {funnelList}
         </ExpandedViewModal>
       )}
@@ -150,15 +166,30 @@ function FunnelBarRow({
 }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-        <span className="mono" style={{ fontSize: 13, color: 'rgba(237,237,240,.75)' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: 5,
+        }}
+      >
+        <span
+          className="mono"
+          style={{ fontSize: 13, color: 'rgba(237,237,240,.75)' }}
+        >
           {label}
         </span>
         <span className="mono" style={{ fontSize: 12.5, color: 'var(--text)' }}>
           {count.toLocaleString()}
         </span>
       </div>
-      <div style={{ height: 18, borderRadius: 4, background: 'rgba(255,255,255,.06)' }}>
+      <div
+        style={{
+          height: 18,
+          borderRadius: 4,
+          background: 'rgba(255,255,255,.06)',
+        }}
+      >
         <div
           style={{
             width: `${Math.max(1, Math.min(100, pctOfFirst))}%`,

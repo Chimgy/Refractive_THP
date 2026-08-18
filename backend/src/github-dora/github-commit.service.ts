@@ -16,7 +16,12 @@ export class GithubCommitService {
   async recordPush(
     projectId: string,
     branch: string,
-    commits: { sha: string; authorLogin: string | null; authorName: string; committedAt: Date }[],
+    commits: {
+      sha: string;
+      authorLogin: string | null;
+      authorName: string;
+      committedAt: Date;
+    }[],
   ): Promise<void> {
     if (commits.length === 0) return;
     await this.commits

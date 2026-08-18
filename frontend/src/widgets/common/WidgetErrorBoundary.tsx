@@ -19,7 +19,10 @@ export default class WidgetErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    console.error(`Widget "${this.props.widgetTitle}" failed to render:`, error);
+    console.error(
+      `Widget "${this.props.widgetTitle}" failed to render:`,
+      error,
+    );
   }
 
   render() {
@@ -38,14 +41,25 @@ export default class WidgetErrorBoundary extends Component<Props, State> {
             textAlign: 'center',
           }}
         >
-          <span className="mono" style={{ fontSize: 11.5, color: 'var(--bad)' }}>
+          <span
+            className="mono"
+            style={{ fontSize: 11.5, color: 'var(--bad)' }}
+          >
             &ldquo;{this.props.widgetTitle}&rdquo; failed to render
           </span>
-          <span className="mono faint" style={{ fontSize: 10.5, maxWidth: 220 }}>
+          <span
+            className="mono faint"
+            style={{ fontSize: 10.5, maxWidth: 220 }}
+          >
             Its saved config is likely out of date.
           </span>
           {this.props.onRemove && (
-            <button type="button" className="btn" style={{ height: 28, fontSize: 11 }} onClick={this.props.onRemove}>
+            <button
+              type="button"
+              className="btn"
+              style={{ height: 28, fontSize: 11 }}
+              onClick={this.props.onRemove}
+            >
               Remove widget
             </button>
           )}

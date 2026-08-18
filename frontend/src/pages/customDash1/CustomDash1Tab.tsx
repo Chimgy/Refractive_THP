@@ -10,7 +10,9 @@ import {
 } from 'recharts';
 import * as telemetryApi from '../../api/telemetry';
 import WorldMap, { countryName } from '../../components/WorldMap';
-import DashboardGrid, { type DragHandleProps } from '../../widgets/grid/DashboardGrid';
+import DashboardGrid, {
+  type DragHandleProps,
+} from '../../widgets/grid/DashboardGrid';
 import { usePersistedWidgets } from '../../widgets/grid/usePersistedWidgets';
 import AddWidgetPicker from '../../widgets/common/AddWidgetPicker';
 import { getWidgetRegistryEntry } from '../../widgets/registry';
@@ -137,8 +139,12 @@ export default function CustomDash1Tab({
           return (
             <DauWauMauWidget
               instance={widget}
-              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
-              onDuplicate={(inst) => handleDuplicateWidget(inst as DashboardWidgetInstance)}
+              onUpdate={(next) =>
+                handleUpdateWidget(next as DashboardWidgetInstance)
+              }
+              onDuplicate={(inst) =>
+                handleDuplicateWidget(inst as DashboardWidgetInstance)
+              }
               onRemove={handleRemoveWidget}
               dragHandleProps={dragHandleProps}
             />
@@ -147,8 +153,12 @@ export default function CustomDash1Tab({
           return (
             <GrowthIndicatorWidget
               instance={widget}
-              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
-              onDuplicate={(inst) => handleDuplicateWidget(inst as DashboardWidgetInstance)}
+              onUpdate={(next) =>
+                handleUpdateWidget(next as DashboardWidgetInstance)
+              }
+              onDuplicate={(inst) =>
+                handleDuplicateWidget(inst as DashboardWidgetInstance)
+              }
               onRemove={handleRemoveWidget}
               dragHandleProps={dragHandleProps}
             />
@@ -157,8 +167,12 @@ export default function CustomDash1Tab({
           return (
             <RetentionWidget
               instance={widget}
-              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
-              onDuplicate={(inst) => handleDuplicateWidget(inst as DashboardWidgetInstance)}
+              onUpdate={(next) =>
+                handleUpdateWidget(next as DashboardWidgetInstance)
+              }
+              onDuplicate={(inst) =>
+                handleDuplicateWidget(inst as DashboardWidgetInstance)
+              }
               onRemove={handleRemoveWidget}
               dragHandleProps={dragHandleProps}
             />
@@ -167,8 +181,12 @@ export default function CustomDash1Tab({
           return (
             <MarketingFunnelWidget
               instance={widget}
-              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
-              onDuplicate={(inst) => handleDuplicateWidget(inst as DashboardWidgetInstance)}
+              onUpdate={(next) =>
+                handleUpdateWidget(next as DashboardWidgetInstance)
+              }
+              onDuplicate={(inst) =>
+                handleDuplicateWidget(inst as DashboardWidgetInstance)
+              }
               onRemove={handleRemoveWidget}
               dragHandleProps={dragHandleProps}
             />
@@ -178,7 +196,9 @@ export default function CustomDash1Tab({
             <GithubActivityWidget
               instance={widget}
               projectId={projectId}
-              onUpdate={(next) => handleUpdateWidget(next as DashboardWidgetInstance)}
+              onUpdate={(next) =>
+                handleUpdateWidget(next as DashboardWidgetInstance)
+              }
               onRemove={handleRemoveWidget}
               dragHandleProps={dragHandleProps}
             />
@@ -192,7 +212,14 @@ export default function CustomDash1Tab({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 10,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span className="card-title" style={{ fontSize: 15 }}>
             Custom Telemetry Dashboard 1
@@ -201,7 +228,11 @@ export default function CustomDash1Tab({
             drag a header to reposition · drag a corner to resize
           </span>
         </div>
-        <button type="button" className="btn" onClick={() => setPickerOpen(true)}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => setPickerOpen(true)}
+        >
           + Add widget
         </button>
       </div>
@@ -214,7 +245,10 @@ export default function CustomDash1Tab({
       />
 
       {pickerOpen && (
-        <AddWidgetPicker onCancel={() => setPickerOpen(false)} onPick={handleAddWidget} />
+        <AddWidgetPicker
+          onCancel={() => setPickerOpen(false)}
+          onPick={handleAddWidget}
+        />
       )}
 
       <div
@@ -224,11 +258,17 @@ export default function CustomDash1Tab({
           borderTop: '1px dashed var(--border-strong)',
         }}
       >
-        <div className="mono faint" style={{ fontSize: 10.5, marginBottom: 14 }}>
+        <div
+          className="mono faint"
+          style={{ fontSize: 10.5, marginBottom: 14 }}
+        >
           legacy telemetry copy — pasted from the Telemetry tab, not yet
           migrated onto the grid above
         </div>
-        <LegacyTelemetryCopy projectId={projectId} refreshNonce={refreshNonce} />
+        <LegacyTelemetryCopy
+          projectId={projectId}
+          refreshNonce={refreshNonce}
+        />
       </div>
     </div>
   );
@@ -365,7 +405,10 @@ function MiniBar({
       }}
     >
       <div>
-        <div className="mono" style={{ fontSize: 11.5, color: 'rgba(237,237,240,.7)' }}>
+        <div
+          className="mono"
+          style={{ fontSize: 11.5, color: 'rgba(237,237,240,.7)' }}
+        >
           {label}
         </div>
         <div
@@ -432,7 +475,13 @@ function PercentileCacheBlock({
       />
       <div
         className="mono faint"
-        style={{ fontSize: 10, marginLeft: 122, marginTop: 4, display: 'flex', gap: 12 }}
+        style={{
+          fontSize: 10,
+          marginLeft: 122,
+          marginTop: 4,
+          display: 'flex',
+          gap: 12,
+        }}
       >
         <span>p50 {fmt(p50)}</span>
         <span>p75 {fmt(p75)}</span>
@@ -460,7 +509,11 @@ function rankedShares(
     pct: (e.count / total) * 100,
   }));
   if (restCount > 0) {
-    rows.push({ key: 'other', count: restCount, pct: (restCount / total) * 100 });
+    rows.push({
+      key: 'other',
+      count: restCount,
+      pct: (restCount / total) * 100,
+    });
   }
   return rows;
 }
@@ -485,9 +538,9 @@ function LegacyTelemetryCopy({
     null,
   );
   const [errorsFailed, setErrorsFailed] = useState(false);
-  const [expandedFingerprint, setExpandedFingerprint] = useState<
-    string | null
-  >(null);
+  const [expandedFingerprint, setExpandedFingerprint] = useState<string | null>(
+    null,
+  );
   const [snapshotsByFingerprint, setSnapshotsByFingerprint] = useState<
     Record<string, telemetryApi.ErrorSnapshot[] | 'loading' | 'failed'>
   >({});
@@ -624,7 +677,11 @@ function LegacyTelemetryCopy({
         <Stat
           label="Median session"
           value={formatDuration(summary?.sessionWallP50 ?? null)}
-          delta={summaryFailed ? 'failed to load' : 'wall clock · median, outlier-resistant'}
+          delta={
+            summaryFailed
+              ? 'failed to load'
+              : 'wall clock · median, outlier-resistant'
+          }
           deltaTone={summaryFailed ? 'bad' : 'muted'}
         />
         <Stat
@@ -815,9 +872,7 @@ function LegacyTelemetryCopy({
                 whiteSpace: 'nowrap',
               }}
             >
-              {
-                `<script src="https://thp.dev/THP_analytics.js" data-project-id="${projectId}"></script>`
-              }
+              {`<script src="https://thp.dev/THP_analytics.js" data-project-id="${projectId}"></script>`}
             </div>
           </Card>
         </div>
@@ -889,13 +944,23 @@ function LegacyTelemetryCopy({
             );
             if (total === 0) {
               return (
-                <div className="mono faint" style={{ fontSize: 11, marginTop: 14 }}>
+                <div
+                  className="mono faint"
+                  style={{ fontSize: 11, marginTop: 14 }}
+                >
                   No device data recorded yet.
                 </div>
               );
             }
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 11,
+                  marginTop: 16,
+                }}
+              >
                 {DEVICE_ORDER.map((key) => (
                   <MiniBar
                     key={key}
@@ -937,7 +1002,14 @@ function LegacyTelemetryCopy({
             </span>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 11,
+              marginTop: 16,
+            }}
+          >
             {(summary?.scrollDepth ?? []).map((s) => (
               <MiniBar
                 key={s.depth}
@@ -955,7 +1027,9 @@ function LegacyTelemetryCopy({
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      <div
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
+      >
         <Card
           title="Largest Contentful Paint"
           aside={
@@ -973,7 +1047,11 @@ function LegacyTelemetryCopy({
             }
           />
           <BigStat
-            value={summary?.lcpCachedP50 != null ? (summary.lcpCachedP50 / 1000).toFixed(2) : '—'}
+            value={
+              summary?.lcpCachedP50 != null
+                ? (summary.lcpCachedP50 / 1000).toFixed(2)
+                : '—'
+            }
             unit={summary?.lcpCachedP50 != null ? 's' : undefined}
           />
           <div
@@ -1026,7 +1104,8 @@ function LegacyTelemetryCopy({
           >
             {summary?.lcpColdP50 != null || summary?.lcpCachedP50 != null ? (
               (() => {
-                const sFmt = (v: number | null) => (v != null ? `${(v / 1000).toFixed(2)}s` : '—');
+                const sFmt = (v: number | null) =>
+                  v != null ? `${(v / 1000).toFixed(2)}s` : '—';
                 const cold = summary?.lcpColdP50 ?? 0;
                 const cached = summary?.lcpCachedP50 ?? 0;
                 const scale = Math.max(cold, cached, 1);
@@ -1078,10 +1157,21 @@ function LegacyTelemetryCopy({
             }
           />
           <BigStat
-            value={summary?.ttfbHitP50 != null ? String(Math.round(summary.ttfbHitP50)) : '—'}
+            value={
+              summary?.ttfbHitP50 != null
+                ? String(Math.round(summary.ttfbHitP50))
+                : '—'
+            }
             unit={summary?.ttfbHitP50 != null ? 'ms' : undefined}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              marginTop: 16,
+            }}
+          >
             {summary?.ttfbHitP50 != null || summary?.ttfbMissP50 != null ? (
               (() => {
                 const hitP50 = summary?.ttfbHitP50 ?? 0;
@@ -1129,18 +1219,30 @@ function LegacyTelemetryCopy({
         >
           <div style={{ display: 'flex', gap: 26, marginTop: 18 }}>
             <div>
-              <div className="mono" style={{ fontSize: 20, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 20, color: 'var(--text)' }}
+              >
                 {formatDuration(summary?.sessionActiveP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 median active
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 20, color: 'rgba(237,237,240,.45)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 20, color: 'rgba(237,237,240,.45)' }}
+              >
                 {formatDuration(summary?.sessionWallP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 wall clock
               </div>
             </div>
@@ -1191,34 +1293,49 @@ function LegacyTelemetryCopy({
         >
           <div style={{ marginTop: 10, display: 'flex', gap: 26 }}>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {summary ? summary.sessions.toLocaleString() : '—'}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 sessions
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {formatDuration(summary?.sessionWallP50 ?? null)}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 median duration
               </div>
             </div>
             <div>
-              <div className="mono" style={{ fontSize: 26, color: 'var(--text)' }}>
+              <div
+                className="mono"
+                style={{ fontSize: 26, color: 'var(--text)' }}
+              >
                 {pagesPerSession !== null ? pagesPerSession.toFixed(1) : '—'}
               </div>
-              <div className="mono faint" style={{ fontSize: 10.5, marginTop: 3 }}>
+              <div
+                className="mono faint"
+                style={{ fontSize: 10.5, marginTop: 3 }}
+              >
                 pages / session
               </div>
             </div>
           </div>
-          <div
-            className="mono faint"
-            style={{ fontSize: 10.5, marginTop: 20 }}
-          >
+          <div className="mono faint" style={{ fontSize: 10.5, marginTop: 20 }}>
             distribution by wall-clock duration
           </div>
           <div
@@ -1233,7 +1350,9 @@ function LegacyTelemetryCopy({
             {(summary?.sessionWallDurationBuckets ?? []).map((b) => {
               const maxCount = Math.max(
                 1,
-                ...(summary?.sessionWallDurationBuckets.map((s) => s.count) ?? [1]),
+                ...(summary?.sessionWallDurationBuckets.map((s) => s.count) ?? [
+                  1,
+                ]),
               );
               return (
                 <div
@@ -1339,10 +1458,7 @@ function LegacyTelemetryCopy({
               </div>
             </>
           ) : (
-            <div
-              className="mono faint"
-              style={{ fontSize: 11, marginTop: 16 }}
-            >
+            <div className="mono faint" style={{ fontSize: 11, marginTop: 16 }}>
               No cold-navigation samples with load-phase data yet.
             </div>
           )}
@@ -1357,9 +1473,21 @@ function LegacyTelemetryCopy({
           </span>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 11,
+            marginTop: 16,
+          }}
+        >
           {rankedShares(summary?.utmSources ?? [], 8).map((s) => (
-            <MiniBar key={s.key} label={s.key} pct={s.pct} value={s.count.toLocaleString()} />
+            <MiniBar
+              key={s.key}
+              label={s.key}
+              pct={s.pct}
+              value={s.count.toLocaleString()}
+            />
           ))}
           {summary && summary.utmSources.length === 0 ? (
             <div className="mono faint" style={{ fontSize: 11 }}>
@@ -1397,12 +1525,18 @@ function LegacyTelemetryCopy({
           <span>LAST SEEN</span>
         </div>
         {errorsFailed ? (
-          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+          <div
+            className="mono faint"
+            style={{ padding: '15px 30px', fontSize: 11 }}
+          >
             failed to load errors
           </div>
         ) : null}
         {!errorsFailed && errors && errors.length === 0 ? (
-          <div className="mono faint" style={{ padding: '15px 30px', fontSize: 11 }}>
+          <div
+            className="mono faint"
+            style={{ padding: '15px 30px', fontSize: 11 }}
+          >
             No errors recorded.
           </div>
         ) : null}
@@ -1446,7 +1580,10 @@ function LegacyTelemetryCopy({
                 <span className="mono faint" style={{ fontSize: 11 }}>
                   {err.line ?? '—'}:{err.col ?? '—'}
                 </span>
-                <span className="mono" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span
+                  className="mono"
+                  style={{ fontSize: 12, color: 'var(--muted)' }}
+                >
                   {err.count.toLocaleString()}
                 </span>
                 <span className="mono faint" style={{ fontSize: 11 }}>
@@ -1473,8 +1610,8 @@ function LegacyTelemetryCopy({
                   ) : null}
                   {Array.isArray(snapshots) && snapshots.length === 0 ? (
                     <div className="mono faint" style={{ fontSize: 11 }}>
-                      No raw snapshots retained for this fingerprint (current
-                      + previous month only).
+                      No raw snapshots retained for this fingerprint (current +
+                      previous month only).
                     </div>
                   ) : null}
                   {Array.isArray(snapshots)

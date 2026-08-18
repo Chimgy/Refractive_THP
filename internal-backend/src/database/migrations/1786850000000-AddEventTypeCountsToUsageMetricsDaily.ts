@@ -6,9 +6,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 // empty until real feature_used/workflow_*/error_encountered call sites
 // exist client-side (plan §"Build order" Phase 2) — this column is added
 // separately, now, specifically so the dashboard only ever shows real data.
-export class AddEventTypeCountsToUsageMetricsDaily1786850000000
-  implements MigrationInterface
-{
+export class AddEventTypeCountsToUsageMetricsDaily1786850000000 implements MigrationInterface {
   name = 'AddEventTypeCountsToUsageMetricsDaily1786850000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

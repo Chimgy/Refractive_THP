@@ -4,7 +4,9 @@ import type { KeyCount } from '../api/metrics';
 export default function EventBreakdownTable({ rows }: { rows: KeyCount[] }) {
   if (rows.length === 0) {
     return (
-      <p style={{ fontSize: 13, opacity: 0.7 }}>No events recorded yet today.</p>
+      <p style={{ fontSize: 13, opacity: 0.7 }}>
+        No events recorded yet today.
+      </p>
     );
   }
 

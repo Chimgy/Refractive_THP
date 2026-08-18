@@ -1,6 +1,11 @@
 import { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { COMPARATORS, SESSION_TIME_UNITS, type Comparator, type SessionTimeUnit } from '../dauWauMau/activeUserRules';
+import {
+  COMPARATORS,
+  SESSION_TIME_UNITS,
+  type Comparator,
+  type SessionTimeUnit,
+} from '../dauWauMau/activeUserRules';
 import {
   COHORT_TYPE_OPTIONS,
   RETENTION_FEATURE_OPTIONS,
@@ -29,7 +34,9 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
   const [cohortWeeks, setCohortWeeks] = useState(value.cohortWeeks);
   const [cohortType, setCohortType] = useState(value.cohortType);
   const [selectedEntities, setSelectedEntities] = useState(
-    value.selectedEntities.length > 0 ? value.selectedEntities : entityNamesFor(value.cohortType),
+    value.selectedEntities.length > 0
+      ? value.selectedEntities
+      : entityNamesFor(value.cohortType),
   );
   const [basis, setBasis] = useState<RetentionBasis>(value.retentionBasis);
 
@@ -49,14 +56,28 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
   }, []);
 
   const handleSave = useCallback(
-    () => onSave({ cohortWeeks, cohortType, selectedEntities, retentionBasis: basis }),
+    () =>
+      onSave({
+        cohortWeeks,
+        cohortType,
+        selectedEntities,
+        retentionBasis: basis,
+      }),
     [cohortWeeks, cohortType, selectedEntities, basis, onSave],
   );
 
   return createPortal(
     <div className="modal-backdrop" onMouseDown={onCancel}>
-      <div className="panel modal-panel" onMouseDown={(e) => e.stopPropagation()}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+      <div
+        className="panel modal-panel"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <span className="card-title">Edit widget</span>
           <div className="mono faint" style={{ marginTop: 4, fontSize: 10.5 }}>
             Define what a cohort row is, and what counts as "retained".
@@ -65,7 +86,14 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
 
         <div style={{ padding: '16px 20px', overflow: 'auto', flex: 1 }}>
           <div className="label">Counts as retained if</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              marginTop: 10,
+            }}
+          >
             {BASIS_KIND_LABELS.map((b) => (
               <div key={b.kind}>
                 <button
@@ -80,18 +108,32 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
                       height: 8,
                       borderRadius: '50%',
                       border: '1px solid currentColor',
-                      background: basis.kind === b.kind ? 'currentColor' : 'transparent',
+                      background:
+                        basis.kind === b.kind ? 'currentColor' : 'transparent',
                     }}
                   />
                   {b.label}
                 </button>
 
                 {basis.kind === b.kind && basis.kind === 'stayed_on_site' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, marginLeft: 18 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 8,
+                      marginLeft: 18,
+                    }}
+                  >
                     <select
                       className="select"
                       value={basis.comparator}
-                      onChange={(e) => setBasis({ ...basis, comparator: e.target.value as Comparator })}
+                      onChange={(e) =>
+                        setBasis({
+                          ...basis,
+                          comparator: e.target.value as Comparator,
+                        })
+                      }
                     >
                       {COMPARATORS.map((c) => (
                         <option key={c} value={c}>
@@ -105,12 +147,19 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
                       min={0}
                       style={{ width: 90 }}
                       value={basis.value}
-                      onChange={(e) => setBasis({ ...basis, value: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setBasis({ ...basis, value: Number(e.target.value) })
+                      }
                     />
                     <select
                       className="select"
                       value={basis.unit}
-                      onChange={(e) => setBasis({ ...basis, unit: e.target.value as SessionTimeUnit })}
+                      onChange={(e) =>
+                        setBasis({
+                          ...basis,
+                          unit: e.target.value as SessionTimeUnit,
+                        })
+                      }
                     >
                       {SESSION_TIME_UNITS.map((u) => (
                         <option key={u.value} value={u.value}>
@@ -121,23 +170,27 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
                   </div>
                 )}
 
-                {basis.kind === b.kind && basis.kind === 'feature_engagement' && (
-                  <div style={{ marginTop: 8, marginLeft: 18 }}>
-                    <select
-                      className="select"
-                      value={basis.feature}
-                      onChange={(e) =>
-                        setBasis({ ...basis, feature: e.target.value as RetentionFeatureKey })
-                      }
-                    >
-                      {RETENTION_FEATURE_OPTIONS.map((f) => (
-                        <option key={f.key} value={f.key}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {basis.kind === b.kind &&
+                  basis.kind === 'feature_engagement' && (
+                    <div style={{ marginTop: 8, marginLeft: 18 }}>
+                      <select
+                        className="select"
+                        value={basis.feature}
+                        onChange={(e) =>
+                          setBasis({
+                            ...basis,
+                            feature: e.target.value as RetentionFeatureKey,
+                          })
+                        }
+                      >
+                        {RETENTION_FEATURE_OPTIONS.map((f) => (
+                          <option key={f.key} value={f.key}>
+                            {f.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                 {basis.kind === b.kind && basis.kind === 'visited_page' && (
                   <div style={{ marginTop: 8, marginLeft: 18 }}>
@@ -146,7 +199,9 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
                       type="text"
                       style={{ width: 200 }}
                       value={basis.path}
-                      onChange={(e) => setBasis({ ...basis, path: e.target.value })}
+                      onChange={(e) =>
+                        setBasis({ ...basis, path: e.target.value })
+                      }
                       placeholder="/pricing"
                     />
                   </div>
@@ -172,7 +227,14 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
           </select>
 
           {cohortType !== 'weekly_signup' && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                marginTop: 10,
+                flexWrap: 'wrap',
+              }}
+            >
               {entityNamesFor(cohortType).map((name) => (
                 <button
                   key={name}
@@ -187,7 +249,9 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
           )}
 
           <div className="label" style={{ marginTop: 20 }}>
-            {cohortType === 'weekly_signup' ? 'Cohorts shown' : 'Weeks tracked per row'}
+            {cohortType === 'weekly_signup'
+              ? 'Cohorts shown'
+              : 'Weeks tracked per row'}
           </div>
           <input
             className="input-compact"
@@ -212,7 +276,11 @@ export default function RetentionEditor({ value, onCancel, onSave }: Props) {
           <button type="button" className="btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSave}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSave}
+          >
             Save
           </button>
         </div>

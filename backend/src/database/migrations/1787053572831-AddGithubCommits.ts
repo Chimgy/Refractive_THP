@@ -13,7 +13,9 @@ export class AddGithubCommits1787053572831 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "public"."IDX_github_commits_project_sha"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_github_commits_project_sha"`,
+    );
     await queryRunner.query(`DROP TABLE "github_commits"`);
   }
 }

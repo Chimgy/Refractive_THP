@@ -8,7 +8,10 @@ export type ViewMode = 'graph' | 'table';
 
 export type RetentionFeatureKey = 'seo_bot' | 'screen_record' | 'alert_rule';
 
-export const RETENTION_FEATURE_OPTIONS: { key: RetentionFeatureKey; label: string }[] = [
+export const RETENTION_FEATURE_OPTIONS: {
+  key: RetentionFeatureKey;
+  label: string;
+}[] = [
   { key: 'seo_bot', label: 'SEO emulation bot used' },
   { key: 'screen_record', label: 'Screen record used' },
   { key: 'alert_rule', label: 'Alert rule created' },
@@ -18,16 +21,28 @@ export const RETENTION_FEATURE_OPTIONS: { key: RetentionFeatureKey; label: strin
 // week, rather than combining several.
 export type RetentionBasis =
   | { kind: 'logged_in' }
-  | { kind: 'stayed_on_site'; comparator: Comparator; value: number; unit: SessionTimeUnit }
+  | {
+      kind: 'stayed_on_site';
+      comparator: Comparator;
+      value: number;
+      unit: SessionTimeUnit;
+    }
   | { kind: 'feature_engagement'; feature: RetentionFeatureKey }
   | { kind: 'visited_page'; path: string };
 
-export function defaultRetentionBasis(kind: RetentionBasis['kind']): RetentionBasis {
+export function defaultRetentionBasis(
+  kind: RetentionBasis['kind'],
+): RetentionBasis {
   switch (kind) {
     case 'logged_in':
       return { kind: 'logged_in' };
     case 'stayed_on_site':
-      return { kind: 'stayed_on_site', comparator: '>=', value: 5, unit: 'min' };
+      return {
+        kind: 'stayed_on_site',
+        comparator: '>=',
+        value: 5,
+        unit: 'min',
+      };
     case 'feature_engagement':
       return { kind: 'feature_engagement', feature: 'seo_bot' };
     case 'visited_page':
@@ -39,7 +54,8 @@ export function defaultRetentionBasis(kind: RetentionBasis['kind']): RetentionBa
 // default; the other three anchor each row to a release/feature-launch/
 // campaign instead of a calendar week — the columns are still "weeks since"
 // whatever that row's anchor is.
-export type CohortType = 'weekly_signup' | 'release' | 'feature_launch' | 'marketing_campaign';
+export type CohortType =
+  'weekly_signup' | 'release' | 'feature_launch' | 'marketing_campaign';
 
 export const COHORT_TYPE_OPTIONS: { value: CohortType; label: string }[] = [
   { value: 'weekly_signup', label: 'Weekly (first week on the app)' },
@@ -51,7 +67,12 @@ export const COHORT_TYPE_OPTIONS: { value: CohortType; label: string }[] = [
 // No real release/feature/campaign data exists yet — fixed fake entity
 // lists, same "fake data for UI presentation only" constraint as elsewhere.
 export const RELEASE_NAMES = ['v2.1', 'v2.2', 'v2.3', 'v2.4'];
-export const FEATURE_NAMES = ['dashboards', 'exports', 'invites', 'integrations'];
+export const FEATURE_NAMES = [
+  'dashboards',
+  'exports',
+  'invites',
+  'integrations',
+];
 export const CAMPAIGN_NAMES = ['Campaign A', 'Campaign B', 'Campaign C'];
 
 export function entityNamesFor(cohortType: CohortType): string[] {

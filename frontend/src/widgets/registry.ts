@@ -22,7 +22,9 @@ export type WidgetRegistryEntry<TConfig = unknown> = WidgetConstraints & {
 
 const registry = new Map<string, WidgetRegistryEntry<unknown>>();
 
-export function registerWidget<TConfig>(entry: WidgetRegistryEntry<TConfig>): void {
+export function registerWidget<TConfig>(
+  entry: WidgetRegistryEntry<TConfig>,
+): void {
   registry.set(entry.type, entry as WidgetRegistryEntry<unknown>);
 }
 

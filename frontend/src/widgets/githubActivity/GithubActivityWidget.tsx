@@ -13,7 +13,15 @@ type Props = {
   dragHandleProps: DragHandleProps;
 };
 
-function Section({ label, empty, children }: { label: string; empty: boolean; children: React.ReactNode }) {
+function Section({
+  label,
+  empty,
+  children,
+}: {
+  label: string;
+  empty: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="mono faint" style={{ fontSize: 11, marginBottom: 8 }}>
@@ -40,9 +48,13 @@ export default function GithubActivityWidget({
   onRemove,
   dragHandleProps,
 }: Props) {
-  const [byAuthor, setByAuthor] = useState<githubActivityApi.CommitByAuthor[]>([]);
+  const [byAuthor, setByAuthor] = useState<githubActivityApi.CommitByAuthor[]>(
+    [],
+  );
   const [byDay, setByDay] = useState<githubActivityApi.CommitByDay[]>([]);
-  const [branches, setBranches] = useState<githubActivityApi.GithubBranch[]>([]);
+  const [branches, setBranches] = useState<githubActivityApi.GithubBranch[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -75,7 +87,9 @@ export default function GithubActivityWidget({
   return (
     <WidgetShell
       title={instance.title}
-      description={instance.description ?? 'Real data from the linked GitHub repo'}
+      description={
+        instance.description ?? 'Real data from the linked GitHub repo'
+      }
       dragHandleProps={dragHandleProps}
       loading={loading}
       onRefresh={load}
@@ -92,7 +106,12 @@ export default function GithubActivityWidget({
             {byAuthor.map((a) => (
               <div
                 key={a.author}
-                style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 0' }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 12.5,
+                  padding: '4px 0',
+                }}
               >
                 <span>{a.author}</span>
                 <span className="mono">{a.count}</span>
@@ -104,7 +123,12 @@ export default function GithubActivityWidget({
             {byDay.map((d) => (
               <div
                 key={d.day}
-                style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 0' }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 12.5,
+                  padding: '4px 0',
+                }}
               >
                 <span>{d.day}</span>
                 <span className="mono">{d.count}</span>

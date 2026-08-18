@@ -44,7 +44,8 @@ export function generateRetentionCohorts(params: {
   selectedEntities: string[];
   retentionBasis: RetentionBasis;
 }): Cohort[] {
-  const { seed, cohortWeeks, cohortType, selectedEntities, retentionBasis } = params;
+  const { seed, cohortWeeks, cohortType, selectedEntities, retentionBasis } =
+    params;
   const rand = mulberry32(seed);
   const boost = retentionBoostFor(retentionBasis);
   const today = new Date();
@@ -56,16 +57,24 @@ export function generateRetentionCohorts(params: {
       const date = new Date(today);
       date.setDate(date.getDate() - weeksAgo * 7);
       return {
-        label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        label: date.toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+        }),
         weeksAgo,
       };
     });
   } else {
     const all = entityNamesFor(cohortType);
-    const names = all.filter((n) => selectedEntities.length === 0 || selectedEntities.includes(n));
+    const names = all.filter(
+      (n) => selectedEntities.length === 0 || selectedEntities.includes(n),
+    );
     rows = names.map((label, i) => ({
       label,
-      weeksAgo: Math.max(0, Math.round(((names.length - i) / names.length) * (cohortWeeks - 1))),
+      weeksAgo: Math.max(
+        0,
+        Math.round(((names.length - i) / names.length) * (cohortWeeks - 1)),
+      ),
     }));
   }
 
@@ -95,7 +104,9 @@ export function generateRetentionCohorts(params: {
 // Average across whichever rows have data for a given offset, so the
 // aggregate curve isn't dragged down by rows that simply haven't lived long
 // enough to reach that offset yet.
-export function averageRetentionCurve(cohorts: Cohort[]): { offset: number; pct: number }[] {
+export function averageRetentionCurve(
+  cohorts: Cohort[],
+): { offset: number; pct: number }[] {
   const maxOffset = Math.max(0, ...cohorts.map((c) => c.weeksElapsed));
   const points: { offset: number; pct: number }[] = [];
   for (let offset = 0; offset <= maxOffset; offset++) {
@@ -103,16 +114,27 @@ export function averageRetentionCurve(cohorts: Cohort[]): { offset: number; pct:
       .map((c) => c.retentionPct[offset])
       .filter((v): v is number => v != null);
     if (values.length === 0) continue;
-    points.push({ offset, pct: values.reduce((s, v) => s + v, 0) / values.length });
+    points.push({
+      offset,
+      pct: values.reduce((s, v) => s + v, 0) / values.length,
+    });
   }
   return points;
 }
 
 export function cohortsToCsv(cohorts: Cohort[]): string {
   const maxOffset = Math.max(0, ...cohorts.map((c) => c.weeksElapsed));
-  const header = ['cohort', 'size', ...Array.from({ length: maxOffset + 1 }, (_, i) => `w${i}`)].join(',');
+  const header = [
+    'cohort',
+    'size',
+    ...Array.from({ length: maxOffset + 1 }, (_, i) => `w${i}`),
+  ].join(',');
   const rows = cohorts.map((c) =>
-    [c.label, c.size, ...c.retentionPct.slice(0, maxOffset + 1).map((p) => p ?? '')].join(','),
+    [
+      c.label,
+      c.size,
+      ...c.retentionPct.slice(0, maxOffset + 1).map((p) => p ?? ''),
+    ].join(','),
   );
   return [header, ...rows].join('\n');
 }
